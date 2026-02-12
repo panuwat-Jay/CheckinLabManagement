@@ -9,38 +9,34 @@ from .models import Computer, UsageLog
 # ==========================================
 
 def index(request):
-    """
-    หน้าแรก Check-in (index.html)
-    """
-    # 1. รับค่า ID เครื่องจาก URL (เช่น ?pc=1) ถ้าไม่มีให้เป็น 1
     pc_id = request.GET.get('pc', '1')
-    
-    # 2. ดึงข้อมูลเครื่องจาก DB (ถ้าไม่มีให้สร้างใหม่กัน Error สำหรับการทดสอบ)
     computer, created = Computer.objects.get_or_create(
         pc_id=pc_id, 
         defaults={'name': f'PC-{pc_id}', 'status': 'available'}
     )
     
-    # 3. ถ้ามีการกดปุ่ม Submit (POST) จากฟอร์ม
     if request.method == 'POST':
-        user_name = request.POST.get('user_name')
         user_id = request.POST.get('user_id')
+        user_name = request.POST.get('user_name')
+        # รับค่าเพิ่มเติมตามที่ auth.js ต้องการ
+        user_level = request.POST.get('user_level', 'ทั่วไป')
+        user_year = request.POST.get('user_year', '-')
         
-        # อัปเดตสถานะเครื่องใน Database
         computer.status = 'in_use'
         computer.current_user = user_name
         computer.session_start = timezone.now()
         computer.save()
         
-        # ฝัง Session ไว้ใน Browser (เพื่อให้หน้า Timer รู้ว่าใครใช้)
+        # เก็บข้อมูลลง Session ให้ครบถ้วน
         request.session['session_pc_id'] = computer.id
+        request.session['session_user_id'] = user_id
         request.session['session_user_name'] = user_name
+        request.session['session_user_level'] = user_level
+        request.session['session_user_year'] = user_year
         request.session['session_start_time'] = computer.session_start.isoformat()
         
-        # ส่งไปหน้าจับเวลา
         return redirect('timer')
 
-    # 4. ถ้าเป็นการเข้าหน้าเว็บปกติ (GET) ให้ส่งไฟล์ HTML ไปแสดง
     return render(request, 'cklab/kiosk/index.html', {'computer': computer})
 
 def confirm(request):
@@ -64,27 +60,23 @@ def timer(request):
     return render(request, 'cklab/kiosk/timer.html', context)
 
 def feedback(request):
-    """
-    หน้าประเมินผล (feedback.html) -> ทำหน้าที่ Checkout ด้วย
-    """
     if request.method == 'POST':
-        # 1. ดึง ID เครื่องจาก Session
         pc_id = request.session.get('session_pc_id')
         
         if pc_id:
             try:
                 computer = Computer.objects.get(id=pc_id)
                 
-                # 2. บันทึก Log ลง Database ถาวร
+                # บันทึก Log โดยดึงข้อมูลจาก Session ที่เก็บไว้ตอน Check-in
                 UsageLog.objects.create(
-                    user_id="Unknown", # หรือดึงจาก session ถ้าเก็บไว้
+                    user_id=request.session.get('session_user_id', 'Unknown'),
                     user_name=request.session.get('session_user_name', 'Unknown'),
                     computer=computer,
                     start_time=computer.session_start or timezone.now(),
                     satisfaction_score=request.POST.get('rating', 0)
+                    # หากต้องการเก็บ Level/Year ใน Database ถาวร ต้องไปเพิ่ม Field ใน Models.py ก่อน
                 )
 
-                # 3. เคลียร์สถานะเครื่องให้ว่าง
                 computer.status = 'available'
                 computer.current_user = None
                 computer.session_start = None
@@ -92,10 +84,7 @@ def feedback(request):
             except Computer.DoesNotExist:
                 pass
 
-        # 4. ล้าง Session ทั้งหมดออกจาก Browser
         request.session.flush()
-        
-        # 5. กลับหน้าแรก
         return redirect('index')
 
     return render(request, 'cklab/kiosk/feedback.html')

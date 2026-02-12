@@ -7,17 +7,16 @@
 <div class="d-flex justify-content-center align-items-center min-vh-100 py-4">
     <div class="kiosk-card w-100 position-relative shadow-lg border-0 rounded-4 overflow-hidden" style="max-width: 500px;">
         
-        <!-- Badge แสดงชื่อเครื่อง -->
         <div class="position-absolute top-0 end-0 m-4">
             <div class="badge bg-light text-dark shadow-sm border px-3 py-2 rounded-pill">
-                <span class="status-indicator bg-success rounded-circle d-inline-block" style="width: 8px; height: 8px; margin-right: 5px;"></span>
+                <span class="status-indicator bg-success rounded-circle d-inline-block" style="width: 10px; height: 10px; margin-right: 6px;"></span>
                 <span class="small fw-bold text-muted me-1">Station:</span>
-                <!-- ดึงชื่อเครื่องจาก Database -->
-                <strong id="fixedPcIdDisplay" class="text-primary">{{ computer.name }}</strong>
+                <strong id="fixedPcIdDisplay" class="text-primary">
+                    {{ computer.name }} {% if computer.pc_type != "General" %}<span class="text-muted fw-normal mx-1">|</span> {{ computer.pc_type }}{% endif %}
+                </strong>
             </div>
         </div>
 
-        <!-- ส่วนหัว Logo -->
         <div class="text-center pt-5 pb-3 px-4 bg-white border-bottom">
             <img src="{% static 'cklab/img/ubulogo.png' %}" alt="Logo" class="mb-3" style="height: 80px;">
             <h4 class="mb-1 fw-bold text-primary" id="displayLabName">ลงชื่อเข้าใช้งาน</h4>
@@ -26,73 +25,65 @@
         
         <div class="p-4 bg-light kiosk-body">
 
-            <!-- Tabs เลือกประเภทผู้ใช้ -->
             <ul class="nav nav-pills nav-fill mb-4 bg-white p-1 rounded-pill border shadow-sm" role="tablist">
                 <li class="nav-item">
-                    <button class="nav-link active rounded-pill" id="tab-internal" data-bs-toggle="pill" data-bs-target="#pills-internal" type="button" role="tab">
+                    <button class="nav-link active rounded-pill" id="tab-internal" data-bs-toggle="pill" data-bs-target="#pills-internal" type="button" role="tab" onclick="switchTab('internal')">
                         <i class="bi bi-mortarboard-fill me-2"></i>นักศึกษา / บุคลากร
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link rounded-pill" id="tab-external" data-bs-toggle="pill" data-bs-target="#pills-external" type="button" role="tab">
+                    <button class="nav-link rounded-pill" id="tab-external" data-bs-toggle="pill" data-bs-target="#pills-external" type="button" role="tab" onclick="switchTab('external')">
                         <i class="bi bi-building me-2"></i>บุคคลทั่วไป
                     </button>
                 </li>
             </ul>
 
-            <!-- Form หลักสำหรับส่งข้อมูลเข้า Django View -->
             <form method="POST" id="checkinForm">
                 {% csrf_token %}
                 
                 <div class="tab-content" id="pills-tabContent">
                     
-                    <!-- Tab 1: นักศึกษา/บุคลากร -->
                     <div class="tab-pane fade show active" id="pills-internal" role="tabpanel">
                         <div id="formInternal" class="animate-fade">
                             <label class="form-label small fw-bold text-muted ps-2">รหัสบุคลากร / UBU Account</label>
                             <div class="input-group mb-2 shadow-sm">
                                 <span class="input-group-text bg-white border-end-0 ps-3"><i class="bi bi-person-badge text-primary"></i></span>
-                                <!-- name="user_id" เพื่อส่งเข้า views.py -->
                                 <input type="text" class="form-control form-control-lg border-start-0 ps-0" id="ubuUser" name="user_id" placeholder="เช่น 66123456" autofocus>
                                 <button class="btn btn-primary px-4 fw-bold" type="button" onclick="verifyUBUUser()">
                                     ตรวจสอบ
                                 </button>
                             </div>
                             
-                            <!-- ส่วนแสดงผลเมื่อตรวจสอบผ่าน (จำลอง) -->
+                            <div id="loginError" class="text-danger small ps-2 mb-2 d-none">❌ ไม่พบข้อมูลในระบบ UBU</div>
+                            
                             <div id="internalVerifyCard" class="card border-0 shadow-sm p-3 d-none bg-white mt-3"> 
-                                <div class="d-flex align-items-center mb-3">
+                                <div class="d-flex align-items-center">
                                     <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 45px; height: 45px;">
                                         <i class="bi bi-person-check-fill fs-4"></i>
                                     </div>
                                     <div>
-                                        <h6 class="mb-0 fw-bold text-success">พร้อมใช้งาน</h6>
-                                        <small class="text-muted">กรุณากดปุ่มยืนยันด้านล่าง</small>
+                                        <h6 class="mb-0 fw-bold text-success" id="showName">รอยืนยัน...</h6>
+                                        <small class="text-muted d-block" id="showFaculty">-</small>
+                                        <small class="badge bg-info text-dark extra-small" id="showLevelInfo"></small>
                                     </div>
                                 </div>
-                                <!-- Hidden input สำหรับส่งชื่อ (จำลองการดึงชื่ออัตโนมัติ) -->
-                                <input type="hidden" name="user_name" id="hiddenUserName" value="ผู้ใช้งานทั่วไป">
+                                <input type="hidden" name="user_name" id="hiddenUserName">
                             </div>
                         </div>
                     </div>
 
-                    <!-- Tab 2: บุคคลทั่วไป -->
                     <div class="tab-pane fade" id="pills-external" role="tabpanel">
                         <div id="formExternal" class="animate-fade">
                             <div class="mb-3">
                                 <label class="form-label small fw-bold text-muted ps-2">เลขบัตรประชาชน / Passport <span class="text-danger">*</span></label>
                                 <div class="input-group shadow-sm">
                                     <span class="input-group-text bg-white border-end-0 ps-3"><i class="bi bi-card-heading text-primary"></i></span>
-                                    <!-- ใส่ name="user_id" เพื่อให้ใช้แทนกันได้ -->
-                                    <input type="text" id="extIdCard" class="form-control border-start-0" placeholder="ระบุหมายเลข" onchange="document.getElementById('ubuUser').value = this.value">
+                                    <input type="text" id="extIdCard" class="form-control border-start-0" placeholder="ระบุหมายเลข">
                                 </div>
                             </div>
-                            <div class="row g-2 mb-3">
-                                <div class="col-12">
-                                    <label class="form-label small fw-bold text-muted ps-2">ชื่อ - นามสกุล <span class="text-danger">*</span></label>
-                                    <!-- ใส่ onchange เพื่ออัปเดตค่าไปยัง hiddenUserName -->
-                                    <input type="text" id="extName" class="form-control" placeholder="ระบุชื่อจริง" onchange="document.getElementById('hiddenUserName').value = this.value">
-                                </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted ps-2">ชื่อ - นามสกุล <span class="text-danger">*</span></label>
+                                <input type="text" id="extName" class="form-control" placeholder="ระบุชื่อจริง">
                             </div>
                         </div>
                     </div>
@@ -100,8 +91,7 @@
 
                 <hr class="my-4 opacity-10">
 
-                <!-- ปุ่ม Submit ของจริง -->
-                <button type="submit" id="btnConfirm" class="btn btn-secondary w-100 py-3 fw-bold shadow-sm rounded-3 transition-btn">
+                <button type="submit" id="btnConfirm" class="btn btn-secondary w-100 py-3 fw-bold shadow-sm rounded-3 transition-btn" disabled>
                     <i class="bi bi-box-arrow-in-right me-2"></i>เข้าสู่ระบบและเริ่มใช้งาน
                 </button>
             </form>
@@ -110,36 +100,6 @@
                 <i class="bi bi-info-circle me-1"></i>ระบบจะเริ่มจับเวลาทันทีหลังยืนยัน
             </p>
 
-            <!-- Contact Section -->
-            <div id="contactInfoSection" class="mt-4 pt-3 border-top d-none">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center text-muted">
-                        <div class="bg-light rounded-circle p-2 me-2">
-                            <i class="bi bi-headset"></i>
-                        </div>
-                        <div class="lh-1">
-                            <small class="d-block fw-bold text-dark">แจ้งปัญหา/ติดต่อ</small>
-                            <span class="small">-</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-<!-- Modal แจ้งเตือนปิด -->
-<div class="modal fade modal-closed-modern" id="labClosedModal" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-body p-5 text-center">
-                <div class="icon-container-lg animate-pulse-blue mb-3">
-                    <i class="bi bi-pc-display-horizontal fs-1"></i> 
-                </div>
-                <h2 class="fw-bold text-dark mb-2">ขณะนี้ปิดให้บริการ</h2>
-                <p class="text-muted mb-4">Computer Lab Closed</p>
-            </div>
         </div>
     </div>
 </div>
@@ -147,51 +107,95 @@
 
 {% block extra_js %}
 <script>
-    // จำลองฟังก์ชัน Verify แบบง่าย (เพื่อให้ปุ่มกดได้)
+    let verifiedUserData = null;
+    let activeTab = 'internal';
+
+    // ฟังก์ชันสลับ Tab และล้างค่า
+    function switchTab(type) {
+        activeTab = type;
+        verifiedUserData = null;
+        document.getElementById('internalVerifyCard').classList.add('d-none');
+        document.getElementById('loginError').classList.add('d-none');
+        validateForm();
+    }
+
+    // ฟังก์ชันตรวจสอบผู้ใช้ (จำลอง Logic จาก auth.js)
     function verifyUBUUser() {
-        const user = document.getElementById('ubuUser').value;
-        if(user.length >= 3) {
-            document.getElementById('internalVerifyCard').classList.remove('d-none');
-            document.getElementById('btnConfirm').classList.remove('btn-secondary');
-            document.getElementById('btnConfirm').classList.add('btn-primary');
-            document.getElementById('btnConfirm').disabled = false;
+        const input = document.getElementById('ubuUser');
+        const id = input.value.trim();
+        const verifyCard = document.getElementById('internalVerifyCard');
+        const errEl = document.getElementById('loginError');
+
+        if(id.length >= 3) { // สมมติว่าผ่าน
+            verifiedUserData = { 
+                name: "นักศึกษาตัวอย่าง", 
+                faculty: "คณะวิทยาศาสตร์",
+                level: "ปริญญาตรี",
+                year: "2"
+            };
+            
+            document.getElementById('showName').innerText = verifiedUserData.name;
+            document.getElementById('showFaculty').innerText = verifiedUserData.faculty;
+            document.getElementById('showLevelInfo').innerText = `${verifiedUserData.level} ชั้นปีที่ ${verifiedUserData.year}`;
+            document.getElementById('hiddenUserName').value = verifiedUserData.name;
+            
+            verifyCard.classList.remove('d-none');
+            errEl.classList.add('d-none');
         } else {
-            alert('กรุณากรอกรหัสให้ถูกต้อง');
+            verifyCard.classList.add('d-none');
+            errEl.classList.remove('d-none');
+        }
+        validateForm();
+    }
+
+    // ตรวจสอบความพร้อมของฟอร์มก่อนกดปุ่ม
+    function validateForm() {
+        const btn = document.getElementById('btnConfirm');
+        let isValid = false;
+
+        if (activeTab === 'internal') {
+            isValid = verifiedUserData !== null;
+        } else {
+            const id = document.getElementById('extIdCard').value.trim();
+            const name = document.getElementById('extName').value.trim();
+            isValid = id !== '' && name !== '';
+            if(isValid) {
+                document.getElementById('ubuUser').value = id;
+                document.getElementById('hiddenUserName').value = name;
+            }
+        }
+
+        if(isValid) {
+            btn.disabled = false;
+            btn.classList.replace('btn-secondary', 'btn-primary');
+        } else {
+            btn.disabled = true;
+            btn.classList.replace('btn-primary', 'btn-secondary');
         }
     }
 
-    // Logic สำหรับ Tab บุคคลทั่วไป (External)
-    const extInputs = document.querySelectorAll('#extIdCard, #extName');
-    extInputs.forEach(input => {
-        input.addEventListener('input', () => {
-            const id = document.getElementById('extIdCard').value;
-            const name = document.getElementById('extName').value;
-            
-            // Sync ค่าไปยัง Form หลัก
-            document.getElementById('ubuUser').value = id;
-            document.getElementById('hiddenUserName').value = name;
-
-            if(id && name) {
-                document.getElementById('btnConfirm').classList.remove('btn-secondary');
-                document.getElementById('btnConfirm').classList.add('btn-primary');
-                document.getElementById('btnConfirm').disabled = false;
-            }
-        });
+    // ผูก Event Input สำหรับ Tab บุคคลภายนอก
+    document.querySelectorAll('#extIdCard, #extName').forEach(el => {
+        el.addEventListener('input', validateForm);
     });
 
-    // Idle Timer Script
-    let idleTime = 0;
-    function resetTimer() { idleTime = 0; }
-    
-    document.onmousemove = resetTimer;
-    document.onkeypress = resetTimer;
-    document.ontouchstart = resetTimer;
-
-    setInterval(function() {
-        idleTime++;
-        if (idleTime >= 60) { // 60 วินาที ไม่มีการเคลื่อนไหวให้รีเฟรช
-            window.location.reload();
+    // Smart Enter
+    document.getElementById('ubuUser').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (!verifiedUserData) verifyUBUUser();
+            else document.getElementById('checkinForm').submit();
         }
+    });
+
+    // Idle Timer
+    let idleTime = 0;
+    const resetIdle = () => idleTime = 0;
+    ['mousemove', 'keypress', 'touchstart'].forEach(evt => document.addEventListener(evt, resetIdle));
+    
+    setInterval(() => {
+        idleTime++;
+        if (idleTime >= 60) window.location.reload();
     }, 1000);
 </script>
 {% endblock %}
