@@ -1,2 +1,2 @@
-// auth.js - Empty placeholder for custom auth logic
+// auth.js
 console.log("Auth JS Loaded");

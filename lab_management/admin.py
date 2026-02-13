@@ -1,3 +1,5 @@
 from django.contrib import admin
-
-# Register your models here.
+from .models import Computer, Software, UsageLog
+admin.site.register(Computer)
+admin.site.register(Software)
+admin.site.register(UsageLog)
