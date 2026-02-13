@@ -1,0 +1,79 @@
+{% extends 'cklab/base.html' %}
+{% load static %}
+
+{% block title %}Admin Login{% endblock %}
+
+{% block extra_css %}
+<!-- โหลด CSS ของ Admin เพิ่มเติม (main.css โหลดมาจาก base.html แล้ว) -->
+<link href="{% static 'cklab/css/admin.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center min-vh-100 py-4 login-bg">
+    <div class="kiosk-card w-100 animate-fade admin-login-card" style="max-width: 400px;">
+        
+        <div class="kiosk-header pb-0">
+            <img src="{% static 'cklab/img/ubulogo.png' %}" alt="Logo" class="university-logo mb-3">
+            
+            <div>
+                <span class="badge bg-secondary mb-2"><i class="bi bi-shield-lock-fill me-1"></i> Staff Only</span>
+            </div>
+            
+            <h4 class="mb-1 fw-bold text-primary">เข้าสู่ระบบผู้ดูแล</h4>
+            <p class="text-muted small">CKLab Management System</p>
+        </div>
+        
+        <div class="kiosk-body pt-3">
+
+            <!-- แสดง Error ถ้า Login ไม่ผ่าน -->
+            {% if form.errors %}
+            <div class="alert alert-danger py-2 small mb-3 shadow-sm border-0">
+                <i class="bi bi-exclamation-circle-fill me-1"></i> ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง
+            </div>
+            {% endif %}
+
+            <!-- Form -->
+            <form method="post" id="loginForm">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label class="text-label">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                        <!-- name="username" สำคัญมากสำหรับ Django LoginView -->
+                        <input type="text" id="admUser" name="username" class="form-control" placeholder="ชื่อผู้ใช้" required autofocus>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="text-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-key-fill"></i></span>
+                        <!-- name="password" สำคัญมากสำหรับ Django LoginView -->
+                        <input type="password" id="admPass" name="password" class="form-control" placeholder="รหัสผ่าน" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm mb-3 transition-btn">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>เข้าสู่ระบบ
+                </button>
+                
+                <!-- Hidden Input สำหรับ Redirect หลัง Login -->
+                <input type="hidden" name="next" value="{{ next }}">
+            </form>
+
+            <div class="text-center border-top pt-3">
+                <a href="{% url 'index' %}" id="backLink" class="text-decoration-none text-muted small hover-underline">
+                    <i class="bi bi-arrow-left me-1"></i>กลับไปหน้า Check-in
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- เชื่อมต่อกับไฟล์ JS แยก -->
+<script src="{% static 'cklab/js/admin-login.js' %}"></script>
+{% endblock %}

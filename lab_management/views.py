@@ -46,16 +46,15 @@ def confirm(request):
     return render(request, 'cklab/kiosk/confirm.html')
 
 def timer(request):
-    """
-    หน้าจับเวลา (timer.html)
-    """
-    # ตรวจสอบ Session ถ้าไม่มี (ไม่ได้ Check-in มา) ให้ดีดกลับหน้าแรก
     if 'session_pc_id' not in request.session:
         return redirect('index')
-
+    
+    # ตัวอย่างการดึงข้อมูลส่งให้ Template
     context = {
         'user_name': request.session.get('session_user_name'),
         'start_time': request.session.get('session_start_time'),
+        'computer': Computer.objects.get(id=request.session.get('session_pc_id')),
+        # เพิ่มข้อมูลอื่นๆ ตามต้องการ
     }
     return render(request, 'cklab/kiosk/timer.html', context)
 

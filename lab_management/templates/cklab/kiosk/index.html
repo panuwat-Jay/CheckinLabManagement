@@ -107,95 +107,10 @@
 
 {% block extra_js %}
 <script>
-    let verifiedUserData = null;
-    let activeTab = 'internal';
-
-    // ฟังก์ชันสลับ Tab และล้างค่า
-    function switchTab(type) {
-        activeTab = type;
-        verifiedUserData = null;
-        document.getElementById('internalVerifyCard').classList.add('d-none');
-        document.getElementById('loginError').classList.add('d-none');
-        validateForm();
-    }
-
-    // ฟังก์ชันตรวจสอบผู้ใช้ (จำลอง Logic จาก auth.js)
-    function verifyUBUUser() {
-        const input = document.getElementById('ubuUser');
-        const id = input.value.trim();
-        const verifyCard = document.getElementById('internalVerifyCard');
-        const errEl = document.getElementById('loginError');
-
-        if(id.length >= 3) { // สมมติว่าผ่าน
-            verifiedUserData = { 
-                name: "นักศึกษาตัวอย่าง", 
-                faculty: "คณะวิทยาศาสตร์",
-                level: "ปริญญาตรี",
-                year: "2"
-            };
-            
-            document.getElementById('showName').innerText = verifiedUserData.name;
-            document.getElementById('showFaculty').innerText = verifiedUserData.faculty;
-            document.getElementById('showLevelInfo').innerText = `${verifiedUserData.level} ชั้นปีที่ ${verifiedUserData.year}`;
-            document.getElementById('hiddenUserName').value = verifiedUserData.name;
-            
-            verifyCard.classList.remove('d-none');
-            errEl.classList.add('d-none');
-        } else {
-            verifyCard.classList.add('d-none');
-            errEl.classList.remove('d-none');
-        }
-        validateForm();
-    }
-
-    // ตรวจสอบความพร้อมของฟอร์มก่อนกดปุ่ม
-    function validateForm() {
-        const btn = document.getElementById('btnConfirm');
-        let isValid = false;
-
-        if (activeTab === 'internal') {
-            isValid = verifiedUserData !== null;
-        } else {
-            const id = document.getElementById('extIdCard').value.trim();
-            const name = document.getElementById('extName').value.trim();
-            isValid = id !== '' && name !== '';
-            if(isValid) {
-                document.getElementById('ubuUser').value = id;
-                document.getElementById('hiddenUserName').value = name;
-            }
-        }
-
-        if(isValid) {
-            btn.disabled = false;
-            btn.classList.replace('btn-secondary', 'btn-primary');
-        } else {
-            btn.disabled = true;
-            btn.classList.replace('btn-primary', 'btn-secondary');
-        }
-    }
-
-    // ผูก Event Input สำหรับ Tab บุคคลภายนอก
-    document.querySelectorAll('#extIdCard, #extName').forEach(el => {
-        el.addEventListener('input', validateForm);
-    });
-
-    // Smart Enter
-    document.getElementById('ubuUser').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            if (!verifiedUserData) verifyUBUUser();
-            else document.getElementById('checkinForm').submit();
-        }
-    });
-
-    // Idle Timer
-    let idleTime = 0;
-    const resetIdle = () => idleTime = 0;
-    ['mousemove', 'keypress', 'touchstart'].forEach(evt => document.addEventListener(evt, resetIdle));
-    
-    setInterval(() => {
-        idleTime++;
-        if (idleTime >= 60) window.location.reload();
-    }, 1000);
+    // ส่งค่าจาก Django มาไว้ที่ Global Variable เพื่อให้ auth.js ดึงไปใช้ได้
+    window.pcIdFromDjango = "{{ computer.pc_id }}";
 </script>
+
+<!-- โหลดไฟล์ auth.js จาก Static -->
+<script src="{% static 'cklab/js/auth.js' %}"></script>
 {% endblock %}
