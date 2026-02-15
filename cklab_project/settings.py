@@ -1,10 +1,13 @@
 from pathlib import Path
+from dotenv import load_dotenv
 import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = 'django-insecure-setup-key'
-DEBUG = True
-ALLOWED_HOSTS = []
+load_dotenv(BASE_DIR / '.env')
+
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-setup-key')
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -50,11 +53,11 @@ WSGI_APPLICATION = 'cklab_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'cklab_db',
-        'USER': 'cklab_admin',
-        'PASSWORD': 'secretpassword',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.getenv('POSTGRES_DB', 'cklab_db'),
+        'USER': os.getenv('POSTGRES_USER', 'cklab_admin'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'secretpassword'),
+        'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
+        'PORT': os.getenv('POSTGRES_PORT', '5432'),
     }
 }
 

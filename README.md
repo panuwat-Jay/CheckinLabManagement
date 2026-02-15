@@ -1,6 +1,6 @@
 # 🖥️ CKLab Management System
 
-ระบบบริหารจัดการห้องปฏิบัติการคอมพิวเตอร์ พัฒนาด้วย **Django Framework** โดยเน้นประสิทธิภาพและความปลอดภัย รองรับการใช้งานทั้งฝั่งผู้ใช้ (Kiosk) และผู้ดูแลระบบ (Admin Portal)
+ระบบบริหารจัดการห้องปฏิบัติการคอมพิวเตอร์ พัฒนาด้วย **Django Framework** โดยเน้นประสิทธิภาพและความปลอดภัย รองรับการใช้งานทั้งฝั่งผู้ใช้ (Kiosk) และผู้ดูแลระบบ (Admin Portal) — ใช้ **Class-Based Views (CBV)** เป็นหลัก
 
 ---
 
@@ -20,16 +20,16 @@
 
 > **ข้อกำหนด:** สมาชิกทุกคนในทีมดูแล Code และ Logic อย่างน้อย **2 Routes**
 
-| ผู้รับผิดชอบ (Member) | หน้าที่หลัก (Role) | Routes ที่ดูแล |
-| :--- | :--- | :--- |
-| **1. ปภังกร** | **User / Kiosk System** | `path('', views.index)`<br>`path('confirm/', ...)`<br>`path('timer/', ...)`<br>`path('feedback/', ...)` |
-| **2. สถาพร** | **Admin Auth** | `path('admin-portal/login/', ...)`<br>`path('admin-portal/logout/', ...)` |
-| **3. ธนสิทธิ์** | **Admin Monitor** | `path('admin-portal/monitor/', ...)`<br>`path('api/monitor-data/', ...)` (API) |
-| **4. อัษฎาวุธ** | **Booking** | `path('admin-portal/booking/', ...)`<br>`path('admin-portal/booking/history/', ...)` (ประวัติการจอง) |
-| **5. ณัฐกรณ์** | **PC Manage** | `path('admin-portal/manage-pc/', ...)`<br>`path('admin-portal/manage-pc/actions/', ...)` (จัดการสถานะ) |
-| **6. ลลิดา** | **Software** | `path('admin-portal/software/', ...)`<br>`path('admin-portal/software/ai-tools/', ...)` (จัดการ AI) |
-| **7. เขมมิกา** | **Report** | `path('admin-portal/report/', ...)`<br>`path('admin-portal/report/export/', ...)` (Export CSV) |
-| **8. ภานุวัฒน์** | **Config** | `path('admin-portal/config/', ...)`<br>`path('admin-portal/config/logs/', ...)` (ดู Log ระบบ) |
+| ผู้รับผิดชอบ (Member) | หน้าที่หลัก (Role) | Routes ที่ดูแล | View Class (CBV) | Model ที่ดูแล |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. ปภังกร** | **User / Kiosk System** | `path('', ...)`<br>`path('confirm/', ...)`<br>`path('timer/', ...)`<br>`path('feedback/', ...)` | `IndexView`<br>`ConfirmView`<br>`TimerView`<br>`FeedbackView` | — |
+| **2. สถาพร** | **Admin Auth** | `path('admin-portal/login/', ...)`<br>`path('admin-portal/logout/', ...)` | Django built-in `LoginView` / `LogoutView` | — |
+| **3. ธนสิทธิ์** | **Admin Monitor** | `path('admin-portal/monitor/', ...)`<br>`path('api/monitor-data/', ...)` (API) | `AdminMonitorView`<br>`ApiMonitorDataView` | `Computer` |
+| **4. อัษฎาวุธ** | **Booking** | `path('admin-portal/booking/', ...)` | `AdminBookingView`<br>`AdminImportBookingView` | `Booking` |
+| **5. ณัฐกรณ์** | **PC Manage** | `path('admin-portal/manage-pc/', ...)` | `AdminManagePcView` | `Status` |
+| **6. ลลิดา** | **Software** | `path('admin-portal/software/', ...)` | `AdminSoftwareView` | `Software` |
+| **7. เขมมิกา** | **Report** | `path('admin-portal/report/', ...)`<br>`path('admin-portal/report/export/', ...)` (Export CSV) | `AdminReportView`<br>`AdminReportExportView` | `UsageLog` |
+| **8. ภานุวัฒน์** | **Config** | `path('admin-portal/config/', ...)` | `AdminConfigView` (GET + POST) | `SiteConfig` |
 
 ---
 
