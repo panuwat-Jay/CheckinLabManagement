@@ -1,28 +1,54 @@
 {% extends 'cklab/base.html' %}
 {% load static %}
+
 {% block title %}Active Session{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-center align-items-center min-vh-100 bg-light">
-    <div class="card border-0 shadow-lg" style="max-width: 450px; width: 100%; border-radius: 20px;">
-        <div class="bg-primary text-white text-center py-4">
-            <img src="{% static 'cklab/img/ubulogo.png' %}" style="height: 50px;" class="bg-white rounded-circle p-2 mb-2">
-            <h4 class="fw-bold">กำลังใช้งาน</h4>
-            <p class="small opacity-75">PC-{{ computer.pc_id }}</p>
-        </div>
-        <div class="card-body p-4 text-center">
-            <span class="badge bg-light text-dark border px-3 py-2 rounded-pill mb-4">{{ user_name }}</span>
-            <div class="display-1 fw-bold text-primary mb-2" id="timerDisplay">00:00:00</div>
-            <small class="text-muted d-block mb-4">เวลาที่ใช้งาน (Elapsed)</small>
-            
-            <div id="alertBox" class="alert alert-warning d-none"><span id="alertMsg"></span></div>
-            
-            <button onclick="doCheckout()" class="btn btn-danger w-100 py-3 rounded-pill fw-bold shadow-sm">
-                <i class="bi bi-power me-2"></i> เลิกใช้งาน
+<div class="bg-light d-flex align-items-center justify-content-center min-vh-100 w-100 font-prompt position-absolute top-0 start-0">
+
+    <div class="timer-card text-center position-relative">
+        
+        <div class="bg-primary w-100" style="height: 6px;"></div>
+
+        <div class="p-5">
+            <div class="mb-5">
+                <span class="station-badge">
+                    <i class="bi bi-display me-2"></i>{{ computer.name }}
+                </span>
+            </div>
+
+            <div class="mb-5">
+                <div class="display-1" id="timerDisplay" style="font-size: 5rem;">00:00:00</div>
+                <small class="text-muted opacity-75 fw-light mt-2 d-block">SESSION DURATION</small>
+            </div>
+
+            <div class="mb-5">
+                <div class="d-flex align-items-center justify-content-center text-muted mb-1">
+                    <i class="bi bi-person-circle me-2"></i>User
+                </div>
+                <h4 class="text-primary fw-bold mb-0 text-truncate px-3">
+                    {{ user_name|default:"-" }}
+                </h4>
+            </div>
+
+            <div id="alertBox" class="alert alert-warning mb-4 d-none text-start border-0 bg-warning bg-opacity-10 text-dark rounded-3">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span id="alertMsg"></span>
+            </div>
+
+            <button onclick="doCheckout()" class="btn btn-outline-danger w-100 py-3 rounded-pill fw-bold border-2 hover-scale">
+                <i class="bi bi-power me-2"></i> Check Out
             </button>
         </div>
+
+        <div class="pb-4 opacity-25">
+             <img src="{% static 'cklab/img/ubulogo.png' %}" style="height: 25px; filter: grayscale(100%);">
+        </div>
     </div>
+
 </div>
 {% endblock %}
+
 {% block extra_js %}
 <script>
     window.djangoData = {
@@ -32,7 +58,7 @@
         forceEndTime: "{{ force_end_time|default:'' }}",
         monitorUrl: "{% url 'api_monitor_data' %}",
         feedbackUrl: "{% url 'feedback' %}",
-        indexUrl: "{% url 'index' %}"
+        indexUrl: "{% url 'index' %}?pc={{ computer.pc_id }}"
     };
 </script>
 <script src="{% static 'cklab/js/timer.js' %}"></script>

@@ -3,15 +3,6 @@
 
 {% block title %}Check-in | {{ config.lab_name }}{% endblock %}
 
-{% block extra_css %}
-<style>
-    .kiosk-card { background-color: #fff; }
-    .status-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
-    .cursor-pointer { cursor: pointer; }
-    .animate-fade { animation: fadeIn 0.5s; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-</style>
-{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-center align-items-center min-vh-100 py-4 bg-light">
@@ -119,6 +110,7 @@
 
 <form id="django-submit-form" method="POST" action="{% url 'index' %}" style="display: none;">
     {% csrf_token %}
+    <input type="hidden" name="pc_id" value="{{ computer.pc_id }}">
     <input type="hidden" name="user_id" id="hidden_user_id">
     <input type="hidden" name="user_name" id="hidden_user_name">
     <input type="hidden" name="user_type" id="hidden_user_type">
@@ -128,124 +120,10 @@
 
 {% block extra_js %}
 <script>
-    let currentUser = { id: '', name: '', type: 'internal' };
-    let activeTab = 'internal';
-
-    function switchTab(tab) {
-        activeTab = tab;
-        currentUser.type = tab;
-        
-        document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active', 'bg-primary', 'text-white'));
-        document.getElementById(`tab-${tab}`).classList.add('active');
-        
-        document.getElementById('formInternal').classList.add('d-none');
-        document.getElementById('formExternal').classList.add('d-none');
-        
-        if (tab === 'internal') {
-            document.getElementById('formInternal').classList.remove('d-none');
-        } else {
-            document.getElementById('formExternal').classList.remove('d-none');
-            // บุคคลทั่วไป เปิดปุ่มให้กดได้ถ้าต้องการ (เพิ่ม Validate เองทีหลังได้)
-            document.getElementById('btnConfirm').disabled = false;
-            document.getElementById('btnConfirm').classList.remove('btn-secondary');
-            document.getElementById('btnConfirm').classList.add('btn-primary');
-        }
-    }
-
-    // --- แก้ไขส่วนนี้: เชื่อมต่อ API จริง ---
-    function verifyUBUUser() {
-        const userIdInput = document.getElementById('ubuUser');
-        const userId = userIdInput.value.trim();
-        
-        if (!userId) {
-            alert('กรุณากรอกรหัสนักศึกษา/บุคลากร');
-            return;
-        }
-
-        // UI Loading State
-        const verifyBtn = document.querySelector('button[onclick="verifyUBUUser()"]');
-        const originalText = verifyBtn.innerHTML;
-        verifyBtn.disabled = true;
-        verifyBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> กำลังตรวจสอบ...';
-
-        // Reset Display
-        document.getElementById('loginError').classList.add('d-none');
-        document.getElementById('internalVerifyCard').classList.add('d-none');
-        document.getElementById('btnConfirm').disabled = true;
-        document.getElementById('btnConfirm').classList.add('btn-secondary');
-        document.getElementById('btnConfirm').classList.remove('btn-primary');
-
-        // Fetch API
-        fetch(`{% url 'api_verify_user' %}?user_id=${userId}`)
-            .then(response => {
-                if (response.status === 404) {
-                    throw new Error('User not found');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // พบข้อมูลผู้ใช้
-                    const userInfo = data.data;
-
-                    document.getElementById('internalVerifyCard').classList.remove('d-none');
-                    document.getElementById('showName').innerText = userInfo.name;
-                    document.getElementById('showFaculty').innerText = userInfo.faculty;
-
-                    currentUser.id = userInfo.user_id;
-                    currentUser.name = userInfo.name;
-
-                    // เปิดปุ่ม Confirm
-                    const btn = document.getElementById('btnConfirm');
-                    btn.disabled = false;
-                    btn.classList.remove('btn-secondary');
-                    btn.classList.add('btn-primary');
-                } else {
-                    throw new Error(data.message || 'Unknown error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('loginError').classList.remove('d-none');
-            })
-            .finally(() => {
-                // Restore Button State
-                verifyBtn.disabled = false;
-                verifyBtn.innerHTML = originalText;
-            });
-    }
-
-    function confirmCheckIn() {
-        if (activeTab === 'external') {
-            const extId = document.getElementById('extIdCard').value;
-            const extName = document.getElementById('extName').value;
-            const extOrg = document.getElementById('extOrg').value;
-
-            if(!extId || !extName) {
-                alert('กรุณากรอกข้อมูลให้ครบถ้วน');
-                return;
-            }
-            currentUser.id = extId;
-            currentUser.name = `${extName} (${extOrg})`;
-        }
-
-        document.getElementById('hidden_user_id').value = currentUser.id;
-        document.getElementById('hidden_user_name').value = currentUser.name;
-        document.getElementById('hidden_user_type').value = currentUser.type;
-
-        document.getElementById('django-submit-form').submit();
-    }
+    // ส่งค่า URL จาก Django ไปให้ไฟล์ JavaScript ภายนอกใช้งาน
+    const APP_CONFIG = {
+        apiUrl: "{% url 'api_verify_user' %}"
+    };
 </script>
-
-<script>
-    let idleTime = 0;
-    function resetTimer() { idleTime = 0; }
-    document.onmousemove = resetTimer;
-    document.onkeypress = resetTimer;
-    document.ontouchstart = resetTimer;
-    setInterval(function() {
-        idleTime++;
-        if (idleTime >= 60) { window.location.reload(); }
-    }, 1000);
-</script>
+<script src="{% static 'cklab/js/auth.js' %}"></script>
 {% endblock %}

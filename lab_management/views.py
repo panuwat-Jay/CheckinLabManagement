@@ -2,6 +2,7 @@ import csv
 import json
 import base64
 import requests
+import urllib3  # เพิ่ม library นี้สำหรับจัดการ SSL Warning
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
@@ -16,7 +17,11 @@ def verify_ubu_user(user_id):
     """
     ตรวจสอบข้อมูลผู้ใช้จาก UBU API
     Ref: Doc API DSSI Project (Page 1-2)
+    Note: ปรับปรุงให้รองรับ Response จริงที่เป็น Dict และ Status 201
     """
+    # ปิดการแจ้งเตือนความปลอดภัย (SSL Warning)
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    
     url = "https://esapi.ubu.ac.th/api/v1/student/reg-data"
     
     # Encode user_id to Base64
@@ -35,28 +40,50 @@ def verify_ubu_user(user_id):
     }
 
     try:
-        # Timeout 5 วินาที ป้องกันเว็บค้างถ้าระบบมหาลัยล่ม
-        response = requests.post(url, headers=headers, data=payload, timeout=5)
+        # verify=False เพื่อข้ามการตรวจสอบ SSL
+        response = requests.post(url, headers=headers, data=payload, timeout=10, verify=False)
         
-        if response.status_code == 200:
-            data = response.json()
-            # ตรวจสอบว่ามี field 'data' ตามโครงสร้างใน PDF หน้า 1
-            if 'data' in data and data['data']:
-                user_info = data['data'][0]
+        # Debug: ปริ้นท์สถานะดูใน Terminal
+        print(f"API Check: {user_id} -> Status {response.status_code}")
+        
+        # แก้ไข 1: ยอมรับทั้ง Status 200 (OK) และ 201 (Created)
+        if response.status_code in [200, 201]:
+            result_json = response.json()
+            
+            # ตรวจสอบว่ามี field 'data'
+            if 'data' in result_json and result_json['data']:
+                raw_data = result_json['data']
+                user_info = None
+
+                # แก้ไข 2: ตรวจสอบประเภทข้อมูลว่าเป็น List หรือ Dict
+                if isinstance(raw_data, list):
+                    # กรณีเป็น List (ตามคู่มือ)
+                    if len(raw_data) > 0:
+                        user_info = raw_data[0]
+                elif isinstance(raw_data, dict):
+                    # กรณีเป็น Dict (ของจริงที่เจอ)
+                    user_info = raw_data
                 
-                # ประกอบชื่อ-สกุล (ภาษาไทย)
-                prefix = user_info.get('USERPREFIXNAME', '')
-                fname = user_info.get('USERNAME', '')
-                lname = user_info.get('USERSURNAME', '')
-                full_name = f"{prefix}{fname} {lname}".strip()
+                if user_info:
+                    # ประกอบชื่อ-สกุล (ภาษาไทย)
+                    prefix = user_info.get('USERPREFIXNAME', '')
+                    fname = user_info.get('USERNAME', '')
+                    lname = user_info.get('USERSURNAME', '')
+                    full_name = f"{prefix}{fname} {lname}".strip()
+                    
+                    faculty = user_info.get('FACULTYNAME', '')
+                    user_type = user_info.get('USERTYPE', 'Student')
+
+                    return {
+                        'is_valid': True,
+                        'user_id': user_id,
+                        'name': full_name,
+                        'faculty': faculty,
+                        'user_type': user_type
+                    }
+            else:
+                print(f"User {user_id} not found in API response data.")
                 
-                return {
-                    'is_valid': True,
-                    'user_id': user_id,
-                    'name': full_name,
-                    'faculty': user_info.get('FACULTYNAME', ''),
-                    'user_type': user_info.get('USERTYPE', 'Student')
-                }
     except requests.exceptions.RequestException as e:
         print(f"API Connection Error: {e}")
     
@@ -67,11 +94,14 @@ def verify_ubu_user(user_id):
 
 class IndexView(View):
     def get(self, request):
-        # 1. จำลองเครื่อง (ในการใช้งานจริงต้องระบุ ID ถาวรของเครื่องนั้น)
-        pc_id = "1"
+        # 1. รับค่า pc จาก URL (เช่น ?pc=2) ถ้าไม่ใส่มาให้ Default เป็น "1"
+        pc_id = request.GET.get('pc', '1')
+        
+        # ค้นหาหรือสร้างเครื่องตาม pc_id ที่ระบุมา
+        # ถ้ายังไม่มีเครื่องเลขนี้ ให้สร้างใหม่โดยตั้งชื่ออัตโนมัติว่า PC-{pc_id}
         computer, created = Computer.objects.get_or_create(
             pc_id=pc_id, 
-            defaults={'name': 'PC-1', 'status': 'available', 'pc_type': 'General'}
+            defaults={'name': f'PC-{pc_id}', 'status': 'available', 'pc_type': 'General'}
         )
         
         # 2. Config
@@ -79,8 +109,9 @@ class IndexView(View):
         if not config:
             config = SiteConfig.objects.create(lab_name="CKLab Computer Center")
 
-        # 3. Redirect ถ้ามี Session ค้างอยู่
-        if computer.status == 'in_use' and 'session_pc_id' in request.session:
+        # 3. Redirect ถ้าเครื่องนี้มี Session ค้างอยู่ (เช่น กด Refresh หน้าเดิม)
+        # ตรวจสอบว่า Session ที่ค้างอยู่ เป็นของเครื่องนี้จริงๆ หรือไม่
+        if computer.status == 'in_use' and request.session.get('session_pc_id') == pc_id:
             return redirect('timer')
 
         context = {
@@ -92,17 +123,15 @@ class IndexView(View):
     def post(self, request):
         # รับค่าจากฟอร์ม
         user_id = request.POST.get('user_id')
-        user_name = request.POST.get('user_name') # ชื่อที่ส่งมาจาก Frontend (หรือ Hidden Form)
+        user_name = request.POST.get('user_name') 
         user_type = request.POST.get('user_type', 'internal')
+        
+        # จุดสำคัญ: รับ pc_id จาก Hidden Input ที่ส่งมาจากหน้าเว็บ
+        pc_id = request.POST.get('pc_id')
 
-        if not user_id:
+        if not user_id or not pc_id:
             return redirect('index')
         
-        # Validation เพิ่มเติม: ถ้าเป็น internal ให้ลองเช็ค API อีกรอบเพื่อความชัวร์ (Optional)
-        # แต่ถ้า Frontend เช็คมาแล้ว ก็สามารถเชื่อข้อมูล user_name ที่ส่งมาได้ระดับหนึ่ง
-        # เพื่อความรวดเร็วในการ Check-in เราจะบันทึกเลย
-
-        pc_id = "1"
         computer = get_object_or_404(Computer, pc_id=pc_id)
         
         # Update Computer Status
@@ -151,6 +180,7 @@ class TimerView(View):
             
         computer = get_object_or_404(Computer, pc_id=pc_id)
         
+        # ป้องกันกรณี Admin สั่ง Force Stop หรือสถานะเปลี่ยนไปแล้ว
         if computer.status != 'in_use':
             request.session.flush()
             return redirect('index')
@@ -167,6 +197,7 @@ class FeedbackView(View):
         return render(request, 'cklab/kiosk/feedback.html')
 
     def post(self, request):
+        # 1. ดึงข้อมูล Session เก็บไว้ก่อนจะ Flush
         pc_id = request.session.get('session_pc_id')
         user_id = request.session.get('session_user_id')
         user_name = request.session.get('session_user_name')
@@ -174,6 +205,7 @@ class FeedbackView(View):
         rating = request.POST.get('rating')
         
         if pc_id and start_time_str:
+            # ดึง Object ใหม่เพื่อความชัวร์
             computer = Computer.objects.get(pc_id=pc_id)
             start_time = timezone.datetime.fromisoformat(start_time_str)
             
@@ -192,20 +224,24 @@ class FeedbackView(View):
             computer.session_start = None
             computer.save()
             
+        # ล้าง Session (Logout)
         request.session.flush()
-        return redirect('index')
+        
+        # 2. Redirect กลับไปที่หน้า Index พร้อมระบุเครื่องเดิม
+        if pc_id:
+            return redirect(f'/?pc={pc_id}')
+        else:
+            return redirect('index')
 
 
-# --- Admin Portal Side ---
+# --- Admin Portal Side (Placeholder) ---
 
-# ธนสิทธิ์ - Monitor Dashboard(GET ดูรายการ / POST แก้ไขสถานะ)
 class AdminMonitorView(LoginRequiredMixin, View):
     def get(self, request):
         pass
     def post(self, request):
         pass
 
-# อัษฎาวุธ - Booking(GET ดูรายการ / POST แก้ไขสถานะ)
 class AdminBookingView(LoginRequiredMixin, View):
     def get(self, request):
         pass
@@ -216,37 +252,29 @@ class AdminImportBookingView(LoginRequiredMixin, View):
     def post(self, request):
         pass
 
-# ณัฐกรณ์ - Manage PC (GET ดูรายการ / POST แก้ไขสถานะ)
 class AdminManagePcView(LoginRequiredMixin, View):
     def get(self, request):
         pass
-
     def post(self, request):
         pass
 
-# ลลิดา - Software (GET ดูรายการ / POST เพิ่ม-แก้ไข)
 class AdminSoftwareView(LoginRequiredMixin, View):
     def get(self, request):
         pass
-
     def post(self, request):
         pass
 
-# เขมมิกา - Report
 class AdminReportView(LoginRequiredMixin, View):
     def get(self, request):
         pass
 
-# เขมมิกา - Report Export CSV
 class AdminReportExportView(LoginRequiredMixin, View):
     def get(self, request):
         pass
 
-# ภานุวัฒน์ - Config (GET ดูค่า / POST แก้ไขค่า)
 class AdminConfigView(LoginRequiredMixin, View):
     def get(self, request):
         pass
-
     def post(self, request):
         pass
 
