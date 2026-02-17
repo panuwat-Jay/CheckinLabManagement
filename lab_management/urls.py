@@ -24,5 +24,9 @@ urlpatterns = [
     path('admin-portal/software/', views.AdminSoftwareView.as_view(), name='admin_software'), # ลลิดา
     path('admin-portal/report/', views.AdminReportView.as_view(), name='admin_report'), # เขมมิกา
     path('admin-portal/report/export/', views.AdminReportExportView.as_view(), name='admin_report_export'), # เขมมิกา
-    path('admin-portal/config/', views.AdminConfigView.as_view(), name='admin_config'), # ภานุวัฒน์
+    
+    # 4. System Config & Manage User - ภานุวัฒน์
+    path('admin-portal/config/', views.AdminConfigView.as_view(), name='admin_config'), 
+    path('admin-portal/config/update/', views.AdminConfigView.as_view(), name='admin_config_update'), 
+    path('admin-portal/config/manage-user/', views.AdminManageUserView.as_view(), name='admin_manage_user'), 
 ]

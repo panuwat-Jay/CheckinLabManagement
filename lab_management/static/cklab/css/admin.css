@@ -1,3 +1,129 @@
-:root { --sidebar-width: 250px; }
-#sidebar-wrapper { width: var(--sidebar-width); height: 100vh; position: fixed; background: #fff; border-right: 1px solid #eee; }
-#page-content-wrapper { margin-left: var(--sidebar-width); width: 100%; }
+/* =========================================
+   Admin Login Styles (Spacious & Fixed)
+   ========================================= */
+
+/* 1. การ์ด Login */
+.kiosk-card {
+    background-color: #ffffff;
+    border-radius: 35px; /* เพิ่มความมนให้รับกับขนาดที่ใหญ่ขึ้น */
+    box-shadow: 0 15px 50px rgba(0,0,0,0.1);
+    border: none;
+    
+    /* Responsive Size */
+    width: 90%;
+    /* 🔥 ขยายความกว้างกลับมาที่ 520px ให้ดูไม่อึดอัด */
+    max-width: 520px;
+    
+    /* ยังคงล็อคความสูงไว้ เพื่อไม่ให้หน้าเว็บเลื่อน */
+    max-height: 95vh; 
+    overflow-y: auto; 
+    
+    margin: 0 auto;
+}
+
+/* 2. ส่วนหัวการ์ด (เพิ่มพื้นที่ให้โลโก้) */
+.kiosk-header {
+    text-align: center;
+    /* 🔥 แก้ตรงนี้: เพิ่มข้างบนเป็น 3.5rem (เดิม 2rem) ให้โลโก้หายใจสะดวก */
+    padding: 3.5rem 3rem 1rem; 
+}
+
+/* 3. ส่วนเนื้อหา */
+.kiosk-body {
+    /* ขยายขอบข้างเป็น 3.5rem ให้รับกับ Header */
+    padding: 0 3.5rem 3rem; 
+}
+
+/* 4. ป้าย Badge */
+.admin-badge {
+    background-color: #ffeaea;
+    color: #dc3545;
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: inline-block;
+    margin-bottom: 12px;
+    letter-spacing: 0.5px;
+}
+
+/* 5. ช่องกรอกข้อมูล */
+.text-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #6c757d;
+    margin-bottom: 8px;
+    display: block;
+    padding-left: 20px;
+}
+
+.input-group {
+    background-color: #f8f9fa;
+    border-radius: 50px;
+    padding: 6px; /* เพิ่มความหนากลับมานิดนึง */
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.input-group:focus-within {
+    background-color: #ffffff;
+    border-color: #86b7fe;
+    box-shadow: 0 6px 20px rgba(13, 110, 253, 0.15);
+    transform: translateY(-2px);
+}
+
+.input-group-text {
+    background-color: transparent;
+    border: none;
+    color: #0d6efd;
+    padding-left: 25px;
+    padding-right: 15px;
+    font-size: 1.1rem;
+}
+
+.form-control {
+    background-color: transparent;
+    border: none;
+    height: 48px; /* เพิ่มความสูงกลับมาให้กดง่าย */
+    font-size: 1.05rem;
+    color: #495057;
+    padding-left: 5px;
+}
+
+.form-control:focus {
+    box-shadow: none;
+    background-color: transparent;
+}
+
+/* 6. ปุ่ม Login */
+.btn-primary {
+    border-radius: 50px;
+    padding: 14px; /* ปุ่มใหญ่ขึ้น */
+    font-size: 1.1rem;
+    font-weight: 600;
+    box-shadow: 0 4px 6px rgba(13, 110, 253, 0.2);
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(13, 110, 253, 0.3);
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.hover-underline:hover {
+    text-decoration: underline !important;
+    color: #0d6efd !important;
+}
+
+.animate-fade {
+    animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}

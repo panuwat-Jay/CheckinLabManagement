@@ -2,7 +2,7 @@ import csv
 import json
 import base64
 import requests
-import urllib3  # เพิ่ม library นี้สำหรับจัดการ SSL Warning
+import urllib3  # สำหรับจัดการ SSL Warning
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
@@ -10,7 +10,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
+from django.contrib.auth.models import User 
+from django.contrib import messages
+
 from .models import Booking, Computer, SiteConfig, Software, Status, UsageLog
+
+# ปิดการแจ้งเตือนความปลอดภัย (SSL Warning)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- Helper Function for UBU API ---
 def verify_ubu_user(user_id):
@@ -19,9 +25,6 @@ def verify_ubu_user(user_id):
     Ref: Doc API DSSI Project (Page 1-2)
     Note: ปรับปรุงให้รองรับ Response จริงที่เป็น Dict และ Status 201
     """
-    # ปิดการแจ้งเตือนความปลอดภัย (SSL Warning)
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    
     url = "https://esapi.ubu.ac.th/api/v1/student/reg-data"
     
     # Encode user_id to Base64
@@ -31,41 +34,26 @@ def verify_ubu_user(user_id):
         print(f"Encoding Error: {e}")
         return None
 
-    payload = json.dumps({
-        "loginName": encoded_id
-    })
-    
-    headers = {
-        'Content-Type': 'application/json'
-    }
+    payload = json.dumps({"loginName": encoded_id})
+    headers = {'Content-Type': 'application/json'}
 
     try:
         # verify=False เพื่อข้ามการตรวจสอบ SSL
         response = requests.post(url, headers=headers, data=payload, timeout=10, verify=False)
-        
-        # Debug: ปริ้นท์สถานะดูใน Terminal
         print(f"API Check: {user_id} -> Status {response.status_code}")
         
-        # แก้ไข 1: ยอมรับทั้ง Status 200 (OK) และ 201 (Created)
         if response.status_code in [200, 201]:
             result_json = response.json()
-            
-            # ตรวจสอบว่ามี field 'data'
             if 'data' in result_json and result_json['data']:
                 raw_data = result_json['data']
                 user_info = None
 
-                # แก้ไข 2: ตรวจสอบประเภทข้อมูลว่าเป็น List หรือ Dict
-                if isinstance(raw_data, list):
-                    # กรณีเป็น List (ตามคู่มือ)
-                    if len(raw_data) > 0:
-                        user_info = raw_data[0]
+                if isinstance(raw_data, list) and len(raw_data) > 0:
+                    user_info = raw_data[0]
                 elif isinstance(raw_data, dict):
-                    # กรณีเป็น Dict (ของจริงที่เจอ)
                     user_info = raw_data
                 
                 if user_info:
-                    # ประกอบชื่อ-สกุล (ภาษาไทย)
                     prefix = user_info.get('USERPREFIXNAME', '')
                     fname = user_info.get('USERNAME', '')
                     lname = user_info.get('USERSURNAME', '')
@@ -94,39 +82,26 @@ def verify_ubu_user(user_id):
 
 class IndexView(View):
     def get(self, request):
-        # 1. รับค่า pc จาก URL (เช่น ?pc=2) ถ้าไม่ใส่มาให้ Default เป็น "1"
         pc_id = request.GET.get('pc', '1')
-        
-        # ค้นหาหรือสร้างเครื่องตาม pc_id ที่ระบุมา
-        # ถ้ายังไม่มีเครื่องเลขนี้ ให้สร้างใหม่โดยตั้งชื่ออัตโนมัติว่า PC-{pc_id}
         computer, created = Computer.objects.get_or_create(
             pc_id=pc_id, 
             defaults={'name': f'PC-{pc_id}', 'status': 'available', 'pc_type': 'General'}
         )
         
-        # 2. Config
         config = SiteConfig.objects.first()
         if not config:
             config = SiteConfig.objects.create(lab_name="CKLab Computer Center")
 
-        # 3. Redirect ถ้าเครื่องนี้มี Session ค้างอยู่ (เช่น กด Refresh หน้าเดิม)
-        # ตรวจสอบว่า Session ที่ค้างอยู่ เป็นของเครื่องนี้จริงๆ หรือไม่
         if computer.status == 'in_use' and request.session.get('session_pc_id') == pc_id:
             return redirect('timer')
 
-        context = {
-            'computer': computer,
-            'config': config
-        }
+        context = {'computer': computer, 'config': config}
         return render(request, 'cklab/kiosk/index.html', context)
 
     def post(self, request):
-        # รับค่าจากฟอร์ม
         user_id = request.POST.get('user_id')
         user_name = request.POST.get('user_name') 
         user_type = request.POST.get('user_type', 'internal')
-        
-        # จุดสำคัญ: รับ pc_id จาก Hidden Input ที่ส่งมาจากหน้าเว็บ
         pc_id = request.POST.get('pc_id')
 
         if not user_id or not pc_id:
@@ -134,13 +109,11 @@ class IndexView(View):
         
         computer = get_object_or_404(Computer, pc_id=pc_id)
         
-        # Update Computer Status
         computer.status = 'in_use'
         computer.current_user = user_name
         computer.session_start = timezone.now()
         computer.save()
 
-        # Create Server Session
         request.session['session_pc_id'] = pc_id
         request.session['session_user_id'] = user_id
         request.session['session_user_name'] = user_name
@@ -148,29 +121,24 @@ class IndexView(View):
 
         return redirect('timer')
 
-# --- API สำหรับ Frontend เรียกตรวจสอบชื่อ (AJAX) ---
+
 class ApiVerifyUserView(View):
     def get(self, request):
         user_id = request.GET.get('user_id')
         if not user_id:
             return JsonResponse({'success': False, 'message': 'User ID required'}, status=400)
         
-        # เรียก Helper Function
         result = verify_ubu_user(user_id)
         
         if result:
-            return JsonResponse({
-                'success': True,
-                'data': result
-            })
+            return JsonResponse({'success': True, 'data': result})
         else:
-            return JsonResponse({
-                'success': False, 
-                'message': 'ไม่พบข้อมูล หรือการเชื่อมต่อมีปัญหา'
-            }, status=404)
+            return JsonResponse({'success': False, 'message': 'ไม่พบข้อมูล หรือการเชื่อมต่อมีปัญหา'}, status=404)
+
 
 class ConfirmView(TemplateView):
     template_name = 'cklab/kiosk/confirm.html'
+
 
 class TimerView(View):
     def get(self, request):
@@ -180,7 +148,6 @@ class TimerView(View):
             
         computer = get_object_or_404(Computer, pc_id=pc_id)
         
-        # ป้องกันกรณี Admin สั่ง Force Stop หรือสถานะเปลี่ยนไปแล้ว
         if computer.status != 'in_use':
             request.session.flush()
             return redirect('index')
@@ -192,12 +159,12 @@ class TimerView(View):
         }
         return render(request, 'cklab/kiosk/timer.html', context)
 
+
 class FeedbackView(View):
     def get(self, request):
         return render(request, 'cklab/kiosk/feedback.html')
 
     def post(self, request):
-        # 1. ดึงข้อมูล Session เก็บไว้ก่อนจะ Flush
         pc_id = request.session.get('session_pc_id')
         user_id = request.session.get('session_user_id')
         user_name = request.session.get('session_user_name')
@@ -205,11 +172,9 @@ class FeedbackView(View):
         rating = request.POST.get('rating')
         
         if pc_id and start_time_str:
-            # ดึง Object ใหม่เพื่อความชัวร์
             computer = Computer.objects.get(pc_id=pc_id)
             start_time = timezone.datetime.fromisoformat(start_time_str)
             
-            # บันทึก UsageLog
             UsageLog.objects.create(
                 user_id=user_id if user_id else 'Unknown',
                 user_name=user_name,
@@ -218,65 +183,160 @@ class FeedbackView(View):
                 satisfaction_score=rating if rating else 5
             )
             
-            # Reset PC
             computer.status = 'available'
             computer.current_user = None
             computer.session_start = None
             computer.save()
             
-        # ล้าง Session (Logout)
         request.session.flush()
         
-        # 2. Redirect กลับไปที่หน้า Index พร้อมระบุเครื่องเดิม
         if pc_id:
             return redirect(f'/?pc={pc_id}')
-        else:
-            return redirect('index')
+        return redirect('index')
 
 
-# --- Admin Portal Side (Placeholder) ---
+# --- Admin Portal Side ---
 
 class AdminMonitorView(LoginRequiredMixin, View):
     def get(self, request):
-        pass
+        computers = Computer.objects.all().order_by('pc_id')
+        return render(request, 'cklab/admin_monitor.html', {'computers': computers})
+        
     def post(self, request):
-        pass
+        return redirect('admin_monitor')
 
 class AdminBookingView(LoginRequiredMixin, View):
     def get(self, request):
-        pass
+        bookings = Booking.objects.all()
+        return render(request, 'cklab/admin_booking.html', {'bookings': bookings})
+        
     def post(self, request):
-        pass
+        return redirect('admin_booking')
 
 class AdminImportBookingView(LoginRequiredMixin, View):
     def post(self, request):
-        pass
+        messages.success(request, "นำเข้าข้อมูลสำเร็จ (ระบบจำลอง)")
+        return redirect('admin_booking')
 
 class AdminManagePcView(LoginRequiredMixin, View):
     def get(self, request):
-        pass
+        computers = Computer.objects.all().order_by('pc_id')
+        return render(request, 'cklab/admin_manage.html', {'computers': computers})
+        
     def post(self, request):
-        pass
+        return redirect('admin_manage_pc')
 
 class AdminSoftwareView(LoginRequiredMixin, View):
     def get(self, request):
-        pass
+        softwares = Software.objects.all()
+        return render(request, 'cklab/admin_software.html', {'softwares': softwares})
+        
     def post(self, request):
-        pass
+        return redirect('admin_software')
 
 class AdminReportView(LoginRequiredMixin, View):
     def get(self, request):
-        pass
+        logs = UsageLog.objects.all()
+        return render(request, 'cklab/admin_report.html', {'logs': logs})
 
 class AdminReportExportView(LoginRequiredMixin, View):
     def get(self, request):
-        pass
+        # โค้ดสำหรับ Export CSV สามารถใส่ตรงนี้
+        return HttpResponse("ระบบส่งออกไฟล์ CSV")
+
+# --- System Config & Manage User ---
 
 class AdminConfigView(LoginRequiredMixin, View):
     def get(self, request):
-        pass
+        config = SiteConfig.objects.first()
+        if not config:
+            config = SiteConfig.objects.create(lab_name="CKLab Computer Center")
+            
+        admins = User.objects.all().order_by('-is_superuser', 'username')
+        
+        return render(request, 'cklab/admin/admin-config.html', {
+            'config': config, 
+            'admins': admins
+        })
+
     def post(self, request):
-        pass
+        config_type = request.POST.get('config_type')
+        if config_type == 'general':
+            config = SiteConfig.objects.first()
+            if not config: 
+                config = SiteConfig.objects.create()
+                
+            config.lab_name = request.POST.get('lab_name')
+            config.location = request.POST.get('location')
+            config.contact_email = request.POST.get('contact_email')
+            config.contact_phone = request.POST.get('contact_phone')
+            config.admin_on_duty = request.POST.get('admin_on_duty')
+            config.max_usage_minutes = request.POST.get('max_usage_minutes', 180)
+            config.is_open = 'is_open' in request.POST 
+            config.close_message = request.POST.get('close_message')
+            
+            config.save()
+            messages.success(request, "บันทึกการตั้งค่าระบบเรียบร้อยแล้ว")
+            
+        return redirect('admin_config')
+
+class AdminManageUserView(LoginRequiredMixin, View):
+    """ คลาสสำหรับเพิ่ม, แก้ไข, ลบ User ผู้ดูแลระบบ (รับค่าจาก Modal ในหน้า Config) """
+    def post(self, request):
+        action = request.POST.get('action')
+        user_id = request.POST.get('user_id')
+        
+        # 1. สร้างผู้ใช้ใหม่
+        if action == 'create':
+            username = request.POST.get('username')
+            full_name = request.POST.get('full_name', '')
+            password = request.POST.get('password')
+            role = request.POST.get('role')
+            
+            if User.objects.filter(username=username).exists():
+                messages.error(request, f'ชื่อผู้ใช้ "{username}" มีอยู่ในระบบแล้ว')
+            else:
+                first_name = full_name.split()[0] if full_name else ''
+                last_name = " ".join(full_name.split()[1:]) if len(full_name.split()) > 1 else ''
+                is_super = (role == 'Super Admin')
+                
+                User.objects.create_user(
+                    username=username, 
+                    password=password, 
+                    first_name=first_name, 
+                    last_name=last_name, 
+                    is_superuser=is_super, 
+                    is_staff=True
+                )
+                messages.success(request, 'เพิ่มผู้ดูแลระบบเรียบร้อยแล้ว')
+                
+        # 2. แก้ไขผู้ใช้
+        elif action == 'update':
+            user = get_object_or_404(User, id=user_id)
+            full_name = request.POST.get('full_name', '')
+            password = request.POST.get('password')
+            role = request.POST.get('role')
+            
+            user.first_name = full_name.split()[0] if full_name else ''
+            user.last_name = " ".join(full_name.split()[1:]) if len(full_name.split()) > 1 else ''
+            user.is_superuser = (role == 'Super Admin')
+            
+            if password: # อัปเดตพาสเวิร์ดหากมีการกรอกมา
+                user.set_password(password)
+                
+            user.save()
+            messages.success(request, 'อัปเดตข้อมูลผู้ดูแลระบบเรียบร้อยแล้ว')
+            
+        # 3. ลบผู้ใช้
+        elif action == 'delete':
+            user = get_object_or_404(User, id=user_id)
+            if user.id == request.user.id:
+                messages.error(request, 'ไม่สามารถลบบัญชีของตนเองที่กำลังเข้าสู่ระบบได้')
+            else:
+                user.delete()
+                messages.success(request, 'ลบผู้ดูแลระบบเรียบร้อยแล้ว')
+                
+        return redirect('admin_config')
 
 
 # --- API (ธนสิทธิ์) ---

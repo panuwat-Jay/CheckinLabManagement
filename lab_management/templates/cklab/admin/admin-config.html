@@ -1,54 +1,276 @@
-{% extends "cklab/base.html" %}
-{% block title %}ตั้งค่าระบบ — CKLab{% endblock %}
+{% extends 'cklab/base.html' %}
+{% load static %}
+
+{% block title %}System Config - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'cklab/css/admin.css' %}" rel="stylesheet">
+{% endblock %}
 
 {% block content %}
-<div class="container py-5" style="max-width: 640px;">
-    <h2 class="mb-4"><i class="bi bi-gear"></i> ตั้งค่าระบบ</h2>
-
-    {% if messages %}
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+<div class="d-flex">
+    
+    <div id="sidebar-container" class="bg-white shadow-sm" style="width: 250px; min-height: 100vh;">
+        <div class="p-3">
+            <a href="#" class="text-decoration-none text-dark fs-5 fw-bold d-block mb-4">
+                <i class="bi bi-shield-lock text-primary me-2"></i>Admin Panel
+            </a>
+            <nav class="nav flex-column gap-2">
+                <a href="{% url 'admin_monitor' %}" class="nav-link text-dark rounded hover-bg-light p-2">
+                    <i class="bi bi-grid-fill me-2 text-muted"></i> Monitor
+                </a>
+                <a href="{% url 'admin_manage_pc' %}" class="nav-link text-dark rounded hover-bg-light p-2">
+                    <i class="bi bi-pc-display me-2 text-muted"></i> Manage PC
+                </a>
+                <a href="{% url 'admin_booking' %}" class="nav-link text-dark rounded hover-bg-light p-2">
+                    <i class="bi bi-calendar-check-fill me-2 text-muted"></i> Booking
+                </a>
+                <a href="{% url 'admin_software' %}" class="nav-link text-dark rounded hover-bg-light p-2">
+                    <i class="bi bi-robot me-2 text-muted"></i> Manage AI
+                </a>
+                <a href="{% url 'admin_config' %}" class="nav-link active bg-primary bg-opacity-10 text-primary fw-bold rounded p-2">
+                    <i class="bi bi-sliders me-2"></i> System Config
+                </a>
+                <a href="{% url 'admin_report' %}" class="nav-link text-dark rounded hover-bg-light p-2">
+                    <i class="bi bi-file-earmark-bar-graph-fill me-2 text-muted"></i> Reports
+                </a>
+                
+                <div class="border-top my-3"></div>
+                
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-link text-danger border-0 bg-transparent w-100 text-start p-2 rounded hover-bg-light" onclick="return confirm('ยืนยันออกจากระบบ?');">
+                        <i class="bi bi-box-arrow-right me-2"></i> Logout
+                    </button>
+                </form>
+            </nav>
+        </div>
     </div>
-    {% endfor %}
-    {% endif %}
-
-    <form method="post">
-        {% csrf_token %}
-
-        <div class="card mb-4">
-            <div class="card-body">
-                <div class="mb-3">
-                    <label for="lab_name" class="form-label fw-bold">ชื่อห้องแลป</label>
-                    <input type="text" class="form-control" id="lab_name" name="lab_name"
-                           value="{{ config.lab_name }}" required maxlength="100">
-                </div>
-
-                <div class="mb-3">
-                    <label for="max_session_minutes" class="form-label fw-bold">เวลาจำกัด Session (นาที)</label>
-                    <input type="number" class="form-control" id="max_session_minutes" name="max_session_minutes"
-                           value="{{ config.max_session_minutes }}" min="1" required>
-                </div>
-
-                <div class="mb-3 form-check form-switch">
-                    <input type="checkbox" class="form-check-input" id="booking_enabled" name="booking_enabled"
-                           {% if config.booking_enabled %}checked{% endif %}>
-                    <label class="form-check-label fw-bold" for="booking_enabled">เปิดระบบจอง</label>
-                </div>
-
-                <div class="mb-3">
-                    <label for="announcement" class="form-label fw-bold">ข้อความประกาศ</label>
-                    <textarea class="form-control" id="announcement" name="announcement"
-                              rows="3" placeholder="ข้อความที่จะแสดงบนหน้า Kiosk (เว้นว่างถ้าไม่มี)">{{ config.announcement }}</textarea>
-                </div>
+    <div class="flex-grow-1 p-4 bg-light" style="height: 100vh; overflow-y: auto;">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold text-dark mb-1">⚙️ System Configuration</h3>
+                <p class="text-muted small mb-0">ตั้งค่าระบบทั่วไป และจัดการผู้ดูแลระบบ</p>
             </div>
+            
+            {% if messages %}
+                <div class="toast-container position-fixed top-0 end-0 p-3">
+                    {% for message in messages %}
+                    <div class="toast align-items-center text-white bg-{{ message.tags }} border-0 show" role="alert">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                {{ message }}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
         </div>
 
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check-lg"></i> บันทึก
-        </button>
-        <a href="{% url 'admin_monitor' %}" class="btn btn-outline-secondary ms-2">กลับหน้า Monitor</a>
-    </form>
+        <ul class="nav nav-tabs mb-4" id="configTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#tab-general" type="button" role="tab">
+                    <i class="bi bi-gear-fill me-2"></i>การตั้งค่าทั่วไป
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="admins-tab" data-bs-toggle="tab" data-bs-target="#tab-admins" type="button" role="tab">
+                    <i class="bi bi-person-badge-fill me-2"></i>ผู้ดูแลระบบ (Admins)
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="configTabsContent">
+            
+            <div class="tab-pane fade show active" id="tab-general" role="tabpanel">
+                <div class="card border-0 shadow-sm p-4">
+                    <h5 class="fw-bold mb-3 text-primary">ข้อมูลห้องปฏิบัติการและระบบ</h5>
+                    
+                    <form method="post" action="{% url 'admin_config_update' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="config_type" value="general">
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">ชื่อห้องปฏิบัติการ (Lab Name)</label>
+                                <input type="text" name="lab_name" class="form-control" value="{{ config.lab_name }}" placeholder="เช่น CKLab Computer Center">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">สถานที่ตั้ง (Location)</label>
+                                <input type="text" name="location" class="form-control" value="{{ config.location }}" placeholder="เช่น อาคาร 4 ชั้น 2">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">อีเมลติดต่อ (Contact Email)</label>
+                                <input type="email" name="contact_email" class="form-control" value="{{ config.contact_email }}" placeholder="admin@example.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">ระยะเวลาใช้งานสูงสุด (นาที)</label>
+                                <input type="number" name="max_usage_minutes" class="form-control" value="{{ config.max_usage_minutes }}" placeholder="180">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-success">
+                                    <i class="bi bi-person-badge-fill me-1"></i>เจ้าหน้าที่ดูแลระบบ (Admin On Duty)
+                                </label>
+                                <input type="text" name="admin_on_duty" class="form-control" value="{{ config.admin_on_duty }}" placeholder="เช่น คุณสมชาย ใจดี">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-success">
+                                    <i class="bi bi-telephone-fill me-1"></i>เบอร์โทรศัพท์ติดต่อ (Contact Number)
+                                </label>
+                                <input type="text" name="contact_phone" class="form-control" value="{{ config.contact_phone }}" placeholder="เช่น 02-123-4567 ต่อ 101">
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="bg-light p-3 rounded border">
+                            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-toggle-on me-2"></i>สถานะการให้บริการ</h6>
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="labStatusSwitch" name="is_open" {% if config.is_open %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold {% if config.is_open %}text-success{% else %}text-danger{% endif %}" for="labStatusSwitch" id="labStatusLabel">
+                                        {% if config.is_open %}เปิดให้บริการ (Open){% else %}ปิดให้บริการ (Closed){% endif %}
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-muted">ข้อความแจ้งเตือน (เมื่อปิดห้อง)</label>
+                                <input type="text" name="close_message" class="form-control" value="{{ config.close_message }}" placeholder="เช่น ปิดปรับปรุงระบบไฟฟ้า 13.00-15.00 น.">
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end mt-4 pt-3 border-top">
+                            <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
+                                <i class="bi bi-save me-1"></i> บันทึกการตั้งค่า
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="tab-admins" role="tabpanel">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold text-success">รายชื่อผู้ดูแลระบบ</h6>
+                        
+                        <button type="button" class="btn btn-success btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#adminModal" onclick="resetAdminForm()">
+                            <i class="bi bi-person-plus-fill me-1"></i> เพิ่มผู้ดูแล
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-4">ชื่อ-สกุล</th>
+                                        <th>Username</th>
+                                        <th>สิทธิ์</th>
+                                        <th>สถานะ</th>
+                                        <th class="text-end pe-4">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for admin in admins %}
+                                    <tr>
+                                        <td class="ps-4 fw-bold">{{ admin.first_name }} {{ admin.last_name }}</td>
+                                        <td>{{ admin.username }}</td>
+                                        <td>
+                                            {% if admin.is_superuser %}
+                                                <span class="badge bg-danger rounded-pill">Super Admin</span>
+                                            {% else %}
+                                                <span class="badge bg-primary rounded-pill">Staff</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if admin.is_active %}
+                                                <span class="text-success small"><i class="bi bi-circle-fill me-1"></i>Active</span>
+                                            {% else %}
+                                                <span class="text-muted small"><i class="bi bi-slash-circle me-1"></i>Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <button class="btn btn-outline-warning btn-sm border-0" 
+                                                    onclick="editAdmin('{{ admin.id }}', '{{ admin.first_name }} {{ admin.last_name }}', '{{ admin.username }}', '{{ admin.is_superuser|yesno:'Super Admin,Staff' }}')">
+                                                <i class="bi bi-pencil-fill"></i>
+                                            </button>
+                                            
+                                            {% if admin.id != request.user.id %}
+                                            <button class="btn btn-outline-danger btn-sm border-0" onclick="deleteAdmin('{{ admin.id }}')">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4 text-muted">ไม่พบข้อมูลผู้ดูแลระบบ</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
 </div>
+
+<div class="modal fade" id="adminModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header bg-success text-white px-4 py-3 rounded-top-4">
+                <h6 class="modal-title fw-bold" id="adminModalLabel"><i class="bi bi-person-plus-fill me-2"></i>เพิ่มผู้ดูแลระบบ</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form method="post" action="{% url 'admin_manage_user' %}" id="adminForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="user_id" id="adminId">
+                    <input type="hidden" name="action" id="formAction" value="create">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">ชื่อ-นามสกุล</label>
+                        <input type="text" name="full_name" id="adminName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Username</label>
+                        <input type="text" name="username" id="adminUser" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Password <span class="text-danger small" id="passHint">(เว้นว่างถ้าไม่เปลี่ยน)</span></label>
+                        <input type="password" name="password" id="adminPass" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">สิทธิ์การใช้งาน</label>
+                        <select name="role" id="adminRole" class="form-select">
+                            <option value="Staff">Staff (เจ้าหน้าที่ทั่วไป)</option>
+                            <option value="Super Admin">Super Admin (ดูได้ทุกอย่าง)</option>
+                        </select>
+                    </div>
+                    <div class="text-end mt-4">
+                        <button type="button" class="btn btn-light me-2 rounded-pill px-4" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-success fw-bold rounded-pill px-4 shadow-sm">บันทึก</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="deleteAdminForm" method="post" action="{% url 'admin_manage_user' %}" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="user_id" id="deleteUserId">
+    <input type="hidden" name="action" value="delete">
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'cklab/js/admin-config.js' %}"></script>
 {% endblock %}
