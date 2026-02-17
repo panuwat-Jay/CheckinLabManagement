@@ -9,7 +9,6 @@
 
 {% block content %}
 <div class="d-flex">
-    
     <div id="sidebar-container" class="bg-white shadow-sm" style="width: 250px; min-height: 100vh;">
         <div class="p-3">
             <a href="#" class="text-decoration-none text-dark fs-5 fw-bold d-block mb-4">
@@ -88,7 +87,7 @@
                         </thead>
                         <tbody id="pcTableBody">
                             {% for pc in computers %}
-                            <tr data-status="{{ pc.status }}">
+                            <tr>
                                 <td class="ps-4 fw-bold text-dark">
                                     <i class="bi bi-pc-display me-2 text-primary opacity-50"></i>{{ pc.name }}
                                 </td>
@@ -209,7 +208,34 @@
                         <div class="card bg-white border shadow-sm rounded-3">
                             <div class="card-body p-3 custom-scrollbar" style="max-height: 250px; overflow-y: auto;">
                                 <div class="row g-2" id="softwareCheckboxList">
+                                    {% for sw in software_list %}
+                                    <div class="col-md-6">
+                                        <div class="card h-100 shadow-sm soft-card" id="card_{{ sw.id }}" onclick="toggleSoftwareCard('{{ sw.id }}')">
+                                            <div class="card-body p-2 d-flex align-items-center">
+                                                <div class="me-3 bg-white rounded-circle p-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                                    {% if sw.sw_type == 'AI' %}
+                                                        <i class="bi bi-robot text-primary fs-4"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-hdd-network text-secondary fs-4"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="flex-grow-1 lh-1">
+                                                    <h6 class="mb-1 small fw-bold text-dark">{{ sw.name }}</h6>
+                                                    <span class="text-muted" style="font-size: 0.75rem;">Package: {{ sw.version|default:"-" }}</span>
+                                                </div>
+                                                <div class="ms-2">
+                                                    <i class="bi bi-circle text-muted fs-5 opacity-25" id="icon_{{ sw.id }}"></i>
+                                                </div>
+                                                <input class="hidden-checkbox" type="checkbox" name="pcSoftware" 
+                                                       value="{{ sw.name }}" id="sw_{{ sw.id }}" 
+                                                       data-sw-type="{{ sw.sw_type|default:'General' }}">
+                                            </div>
+                                        </div>
                                     </div>
+                                    {% empty %}
+                                        <div class="col-12 text-center text-muted py-3">ไม่พบรายการ Software ในระบบ</div>
+                                    {% endfor %}
+                                </div>
                             </div>
                         </div>
                     </div>

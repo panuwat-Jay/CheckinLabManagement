@@ -223,37 +223,44 @@ class AdminBookingView(LoginRequiredMixin, View):
 
 
 # -------------------------------------------------------------
-# 🛠️ Admin Manage PC (อัปเดตระบบ เพิ่ม/ลบ/แก้ไข สมบูรณ์แบบ)
+# 🛠️ Admin Manage PC
 # -------------------------------------------------------------
 class AdminManagePcView(LoginRequiredMixin, View):
     def get(self, request):
-        # ดึงและเรียงลำดับตารางตามตัวเลข (เช่น PC-1, PC-2, PC-10)
         computers = list(Computer.objects.all())
         def extract_number(pc):
             match = re.search(r'\d+', pc.name)
             return int(match.group()) if match else 9999
         computers.sort(key=extract_number)
         
-        return render(request, 'cklab/admin/admin-manage.html', {'computers': computers})
+        # ดึงรายชื่อ Software ทั้งหมดเพื่อไปแสดงใน Modal สำหรับให้กดเลือก
+        software_list = Software.objects.all()
+        
+        return render(request, 'cklab/admin/admin-manage.html', {
+            'computers': computers,
+            'software_list': software_list  # สำคัญมาก! ต้องส่งตัวนี้ไปให้ HTML ด้วย
+        })
         
     def post(self, request):
         action = request.POST.get('action')
         pc_id = request.POST.get('pc_id')
         
         try:
-            # 1. บันทึก / แก้ไขข้อมูลเครื่อง
             if action == 'save_pc':
                 old_pc_id = request.POST.get('old_pc_id')
                 name = request.POST.get('name', '').strip()
                 status = request.POST.get('status', 'available')
                 pc_type = request.POST.get('pc_type', 'General')
+                
+                # --- 1. รับค่า Software จาก Checkbox ใน Modal ---
+                software_raw = request.POST.getlist('pcSoftware') 
+                clean_names = [sw.split(' (')[0].strip() for sw in software_raw]
+                # ค้นหา Software จากฐานข้อมูลที่มีชื่อตรงกัน
+                softwares_to_add = Software.objects.filter(name__in=clean_names)
 
                 if old_pc_id:
-                    # ---> กรณี: แก้ไขเครื่อง <---
-                    # ใช้วิธีอัปเดตชื่อทับลงไปตรงๆ (ไม่เปลี่ยน ID เบื้องหลัง)
+                    # ---> อัปเดตเครื่องเดิม <---
                     computer = get_object_or_404(Computer, pc_id=old_pc_id)
-                    
-                    # เช็คชื่อซ้ำกับเครื่องอื่นในระบบหรือไม่
                     if Computer.objects.filter(name=name).exclude(pc_id=old_pc_id).exists():
                         messages.error(request, f"ไม่สามารถเปลี่ยนชื่อได้ เนื่องจาก '{name}' มีในระบบอยู่แล้ว")
                         return redirect('admin_manage_pc')
@@ -262,33 +269,35 @@ class AdminManagePcView(LoginRequiredMixin, View):
                     computer.status = status
                     computer.pc_type = pc_type
                     computer.save()
+                    
+                    # 2. นำ Software ไปผูกกับเครื่อง
+                    computer.installed_softwares.set(softwares_to_add)
                     messages.success(request, f"อัปเดตข้อมูลเครื่อง {name} สำเร็จ")
                     
                 else:
-                    # ---> กรณี: เพิ่มเครื่องใหม่ <---
-                    # สกัดตัวเลขจากชื่อเพื่อมาทำเป็น ID (เช่น "PC-12" ได้ "12")
+                    # ---> เพิ่มเครื่องใหม่ <---
                     match = re.search(r'\d+', name)
                     new_pc_id = match.group() if match else name
                     
                     if Computer.objects.filter(pc_id=new_pc_id).exists() or Computer.objects.filter(name=name).exists():
                         messages.error(request, f"เครื่อง '{name}' มีอยู่ในระบบแล้ว กรุณาใช้ชื่ออื่น")
                     else:
-                        Computer.objects.create(
+                        computer = Computer.objects.create(
                             pc_id=new_pc_id,
                             name=name,
                             status=status,
                             pc_type=pc_type
                         )
+                        # 2. นำ Software ไปผูกกับเครื่องใหม่
+                        computer.installed_softwares.set(softwares_to_add)
                         messages.success(request, f"เพิ่มเครื่อง {name} เข้าสู่ระบบสำเร็จ")
                         
-            # 2. ลบเครื่อง
             elif action == 'delete_pc':
                 computer = get_object_or_404(Computer, pc_id=pc_id)
                 pc_name = computer.name
                 computer.delete()
                 messages.success(request, f"ลบเครื่อง {pc_name} ออกจากระบบเรียบร้อยแล้ว")
 
-            # 3. สั่งบังคับออกจากระบบ (จากหน้า Monitor / Manage Active)
             elif action == 'force_stop':
                 computer = get_object_or_404(Computer, pc_id=pc_id)
                 if computer.status == 'in_use':
@@ -306,7 +315,7 @@ class AdminManagePcView(LoginRequiredMixin, View):
                 computer.session_start = None
                 computer.save()
                 messages.success(request, f"สั่ง Force Logout เครื่อง {computer.name} เรียบร้อยแล้ว")
-                return redirect('admin_monitor') # เฉพาะ Force Stop ให้กลับไปหน้า Monitor
+                return redirect('admin_monitor')
 
         except IntegrityError:
             messages.error(request, 'ไม่สามารถลบเครื่องนี้ได้ เนื่องจากมีข้อมูลประวัติการใช้งานผูกอยู่ (แนะนำให้เปลี่ยนสถานะเป็น "แจ้งซ่อม" แทน)')
