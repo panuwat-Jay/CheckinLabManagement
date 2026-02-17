@@ -22,14 +22,24 @@ class Software(models.Model):
 
 # อัษฎาวุธ - สร้าง Model สำหรับการจองคอมพิวเตอร์ (Booking) เพื่อเก็บข้อมูลการจองของผู้ใช้
 class Booking(models.Model):
+    BOOKING_STATUS = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('completed', 'Completed'),
+        ('no_show', 'No Show'),
+        ('cancelled', 'Cancelled')
+    ]
+    
     user_name = models.CharField(max_length=100)
-    computer = models.ForeignKey('Computer', on_delete=models.CASCADE)
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
+    pc_id = models.IntegerField()  # Reference to Computer
+    date = models.DateField()  # Booking date (YYYY-MM-DD format)
+    start_time = models.CharField(max_length=5)  # HH:MM format
+    end_time = models.CharField(max_length=5)  # HH:MM format
+    status = models.CharField(max_length=20, choices=BOOKING_STATUS, default='pending')
     note = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"Booking: {self.user_name} - {self.computer}"
+        return f"Booking: {self.user_name} - PC{self.pc_id} ({self.date})"
 
 # ณัฐกรณ์ - สร้าง Model สำหรับสถานะเครื่องคอมพิวเตอร์ (Status) เพื่อระบุว่าเครื่องนั้นอยู่ในสถานะอะไร
 class Status(models.Model):
@@ -50,9 +60,10 @@ class Computer(models.Model):
     
     pc_id = models.CharField(max_length=10, unique=True)  # ฟิลด์ที่ Error ถามหา
     name = models.CharField(max_length=50)
+    code_name = models.CharField(max_length=50, null=True, blank=True)  # AI codename (e.g., "Alpha", "Beta")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
     pc_type = models.CharField(max_length=20, default='General')
-    installed_software = models.ManyToManyField(Software, blank=True)
+    installed_software = models.JSONField(default=list, help_text="List of installed software")  # Changed to JSONField
     
     # ฟิลด์สำหรับเก็บสถานะ Session ปัจจุบัน
     current_user = models.CharField(max_length=100, null=True, blank=True)
@@ -63,12 +74,29 @@ class Computer(models.Model):
 
 # เขมมิกา - สร้าง Model สำหรับบันทึกการใช้งานคอมพิวเตอร์ (UsageLog)
 class UsageLog(models.Model):
+    # Session details
     user_id = models.CharField(max_length=50)
     user_name = models.CharField(max_length=100)
-    computer = models.ForeignKey(Computer, on_delete=models.SET_NULL, null=True)
+    user_role = models.CharField(max_length=50, default='Guest')
+    user_faculty = models.CharField(max_length=100, default='-')
+    user_level = models.CharField(max_length=50, default='-')
+    user_year = models.CharField(max_length=50, default='-')
+    
+    pc_id = models.IntegerField()  # Reference to Computer
+    action = models.CharField(max_length=50)  # START_SESSION, END_SESSION, etc.
     start_time = models.DateTimeField()
-    end_time = models.DateTimeField(auto_now_add=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    duration_minutes = models.IntegerField(default=0)
+    
+    # Usage details
+    used_software = models.JSONField(default=list)
+    is_ai_used = models.BooleanField(default=False)
+    slot_id = models.CharField(max_length=50, default='Unlimited')
+    details = models.TextField(blank=True, default='')
+    
+    # Feedback
     satisfaction_score = models.IntegerField(null=True, blank=True)
+    comment = models.TextField(blank=True, default='')
     
     def __str__(self):
-        return f"{self.user_name} ({self.start_time})"
+        return f"{self.user_name} - PC{self.pc_id} ({self.start_time})"

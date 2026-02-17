@@ -7,6 +7,10 @@ import urllib3  # เพิ่ม library นี้สำหรับจัด�
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth import views as auth_views
+import logging
+
+logger = logging.getLogger(__name__)
 from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
@@ -234,56 +238,88 @@ class FeedbackView(View):
             return redirect('index')
 
 
+# --- Custom login view for debugging CSRF issues ---
+
+class DebugLoginView(auth_views.LoginView):
+    """Extends the built-in LoginView to log CSRF token/cookie values.
+    Useful to diagnose mismatches when a 403 occurs.
+    """
+    def post(self, request, *args, **kwargs):
+        tok = request.POST.get('csrfmiddlewaretoken')
+        cookie = request.COOKIES.get('csrftoken')
+        host = request.get_host()
+        referer = request.META.get('HTTP_REFERER')
+        # print to console in case logging not configured for DEBUG
+        print(f"DEBUG Login POST host={host}, referer={referer}, token={tok}, cookie={cookie}")
+        logger.debug(f"POST csrfmiddlewaretoken={tok}")
+        logger.debug(f"Cookie csrftoken={cookie}")
+        logger.debug(f"Host={host} Referer={referer}")
+        return super().post(request, *args, **kwargs)
+
 # --- Admin Portal Side (Placeholder) ---
 
 class AdminMonitorView(LoginRequiredMixin, View):
     def get(self, request):
-        pass
+        # Basic placeholder page for monitoring computers
+        return render(request, 'cklab/admin/admin-monitor.html')
+
     def post(self, request):
-        pass
+        # For now, just redirect back to the same page. Future actions can be added here.
+        return self.get(request)
 
 class AdminBookingView(LoginRequiredMixin, View):
     def get(self, request):
-        pass
+        # TODO: implement booking management page
+        return HttpResponse("Admin booking page not implemented yet.")
+
     def post(self, request):
-        pass
+        # no action for now
+        return self.get(request)
 
 class AdminImportBookingView(LoginRequiredMixin, View):
     def post(self, request):
-        pass
+        # placeholder for file import action
+        return HttpResponse("Import booking endpoint not implemented.")
 
 class AdminManagePcView(LoginRequiredMixin, View):
     def get(self, request):
-        pass
+        return HttpResponse("Admin manage PC page not implemented yet.")
+
     def post(self, request):
-        pass
+        return self.get(request)
 
 class AdminSoftwareView(LoginRequiredMixin, View):
     def get(self, request):
-        pass
+        return HttpResponse("Admin software page not implemented yet.")
+
     def post(self, request):
-        pass
+        return self.get(request)
 
 class AdminReportView(LoginRequiredMixin, View):
     def get(self, request):
-        pass
+        return HttpResponse("Admin report page not implemented yet.")
 
 class AdminReportExportView(LoginRequiredMixin, View):
     def get(self, request):
-        pass
+        return HttpResponse("Admin report export not implemented yet.")
 
 class AdminConfigView(LoginRequiredMixin, View):
     def get(self, request):
-        pass
+        return HttpResponse("Admin config page not implemented yet.")
+
     def post(self, request):
-        pass
+        return self.get(request)
 
 
 # --- API (ธนสิทธิ์) ---
 
 class ApiMonitorDataView(View):
     def get(self, request):
-        # ดึงข้อมูลคอมพิวเตอร์ทั้งหมดเพื่อส่งให้หน้า Monitor หรือ Timer เช็คสถานะ
-        computers = Computer.objects.all().values('pc_id', 'name', 'status', 'current_user')
+        # 1. ดึงข้อมูลคอมพิวเตอร์ทั้งหมด (ระบุฟิลด์ที่จำเป็นต้องใช้ในหน้า Monitor)
+        computers = Computer.objects.all().values('pc_id', 'name', 'status', 'current_user', 'start_time')
+        
+        # 2. แปลง QuerySet เป็น List (ต้องทำก่อนบรรทัด return)
         data = list(computers)
-        return JsonResponse({'data': data})
+        
+        # 3. ส่งกลับไปในรูปแบบ JSON โดยใช้ Key ว่า 'pcs' เพื่อให้ตรงกับไฟล์ admin-monitor.js
+        return JsonResponse({'pcs': data}, safe=False)

@@ -1,0 +1,288 @@
+/* admin.css - Styles for Admin Monitor Dashboard */
+
+/* PC Card Grid - Use Bootstrap row for layout */
+#monitorGrid {
+    /* Bootstrap .row handles the layout with display: flex */
+    gap: 1rem;
+}
+
+/* PC Card Hover Effects */
+.pc-card-hover {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.pc-card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Badge Styling */
+.badge {
+    font-size: 0.75rem;
+}
+
+/* Spinner for Active Sessions */
+.spinner-grow {
+    width: 6px;
+    height: 6px;
+}
+
+/* Stat Cards */
+.stat-card {
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.stat-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: bold;
+}
+
+/* Filter Buttons */
+.filter-btn {
+    font-size: 0.875rem;
+    padding: 0.4rem 1rem;
+    margin-right: 0.5rem;
+}
+
+.filter-btn.active {
+    color: white;
+}
+
+/* Modal Styling */
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-title {
+    font-weight: 600;
+    color: #212529;
+}
+
+/* Tab Navigation */
+.nav-pills .nav-link {
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+.nav-pills .nav-link.active {
+    background-color: #0d6efd;
+}
+
+/* Form Elements */
+.form-label {
+    font-weight: 500;
+    color: #212529;
+}
+
+.form-control-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* Software Tags in Modal */
+#modalSoftwareTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+#modalSoftwareTags .badge {
+    padding: 0.5rem 0.75rem;
+}
+
+/* Search Input */
+#searchPC {
+    padding: 0.4rem 0.75rem;
+}
+
+/* Date Picker */
+#monitorDate {
+    max-width: 200px;
+}
+
+/* Clock Display */
+#clockDisplay {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #0d6efd;
+    letter-spacing: 0.05em;
+}
+
+/* Header Section */
+.admin-header {
+    margin-bottom: 1.5rem;
+}
+
+.admin-header h2 {
+    font-weight: 600;
+    color: #212529;
+}
+
+.admin-header .fa-display,
+.admin-header .bi-display {
+    margin-right: 0.5rem;
+}
+
+/* Stats Row */
+.stats-row {
+    margin-bottom: 2rem;
+}
+
+.stat-card-item {
+    transition: all 0.2s ease;
+}
+
+.stat-card-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .stat-icon {
+        font-size: 1.5rem;
+    }
+
+    .stat-value {
+        font-size: 1.25rem;
+    }
+
+    #clockDisplay {
+        font-size: 1rem;
+    }
+}
+
+/* Utility Classes */
+.text-truncate-custom {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Alert Box Styling */
+.alert-success {
+    background-color: #d1e7dd;
+    border-color: #badbcc;
+    color: #0f5132;
+}
+
+.alert-success strong {
+    color: #0f5132;
+}
+
+/* Loading State */
+.loading-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+/* No Data State */
+.no-data-state {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.no-data-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+/* Admin Sidebar */
+.admin-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 250px;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+.admin-sidebar .list-group {
+    flex: 1;
+}
+
+.admin-sidebar .list-group-item {
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    color: #495057;
+    transition: all 0.2s ease;
+}
+
+.admin-sidebar .list-group-item:hover {
+    background-color: #e9ecef;
+    color: #0d6efd;
+    padding-left: 2rem;
+}
+
+.admin-sidebar .list-group-item.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.admin-sidebar .list-group-item i {
+    width: 20px;
+    text-align: center;
+}
+
+/* Main content offset for sidebar */
+body {
+    margin-left: 250px;
+}
+
+/* Responsive: Hide sidebar on mobile */
+@media (max-width: 768px) {
+    .admin-sidebar {
+        position: relative;
+        width: 100%;
+        flex-direction: row;
+        height: auto;
+        border-bottom: 1px solid #dee2e6;
+        margin-bottom: 1rem;
+    }
+
+    .admin-sidebar .list-group {
+        flex-direction: row;
+        flex: unset;
+    }
+
+    .admin-sidebar .list-group-item {
+        flex: 1;
+        border-right: 1px solid #dee2e6;
+        padding: 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .admin-sidebar .list-group-item:hover {
+        padding-left: 0.5rem;
+    }
+
+    body {
+        margin-left: 0;
+    }
+}

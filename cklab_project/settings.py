@@ -23,6 +23,8 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    # custom debug middleware logs cookie/token before the real CSRF middleware
+    'lab_management.middleware.CsrfDebugMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -78,3 +80,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/admin-portal/login/'
 LOGIN_REDIRECT_URL = '/admin-portal/monitor/'
 LOGOUT_REDIRECT_URL = '/admin-portal/login/'
+
+# CSRF configuration (local development)
+# An explicit value avoids the occasional ".local" suffix that Windows DNS may provide.
+# Empty string means "host-only" (no Domain attribute).
+CSRF_COOKIE_DOMAIN = ''
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
