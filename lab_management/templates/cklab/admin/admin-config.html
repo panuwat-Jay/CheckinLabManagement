@@ -5,6 +5,12 @@
 
 {% block extra_css %}
 <link href="{% static 'cklab/css/admin.css' %}" rel="stylesheet">
+<style>
+    input[type="password"]::-ms-reveal,
+    input[type="password"]::-ms-clear {
+        display: none;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -25,9 +31,6 @@
                 <a href="{% url 'admin_booking' %}" class="nav-link text-dark rounded hover-bg-light p-2">
                     <i class="bi bi-calendar-check-fill me-2 text-muted"></i> Booking
                 </a>
-                <a href="{% url 'admin_software' %}" class="nav-link text-dark rounded hover-bg-light p-2">
-                    <i class="bi bi-robot me-2 text-muted"></i> Manage AI
-                </a>
                 <a href="{% url 'admin_config' %}" class="nav-link active bg-primary bg-opacity-10 text-primary fw-bold rounded p-2">
                     <i class="bi bi-sliders me-2"></i> System Config
                 </a>
@@ -46,7 +49,8 @@
             </nav>
         </div>
     </div>
-    <div class="flex-grow-1 p-4 bg-light" style="height: 100vh; overflow-y: auto;">
+
+    <div class="flex-grow-1 p-4" style="height: 100vh; overflow-y: auto;">
         
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
@@ -59,9 +63,7 @@
                     {% for message in messages %}
                     <div class="toast align-items-center text-white bg-{{ message.tags }} border-0 show" role="alert">
                         <div class="d-flex">
-                            <div class="toast-body">
-                                {{ message }}
-                            </div>
+                            <div class="toast-body">{{ message }}</div>
                             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
                         </div>
                     </div>
@@ -71,13 +73,13 @@
         </div>
 
         <ul class="nav nav-tabs mb-4" id="configTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#tab-general" type="button" role="tab">
+            <li class="nav-item">
+                <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#tab-general" type="button">
                     <i class="bi bi-gear-fill me-2"></i>การตั้งค่าทั่วไป
                 </button>
             </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="admins-tab" data-bs-toggle="tab" data-bs-target="#tab-admins" type="button" role="tab">
+            <li class="nav-item">
+                <button class="nav-link" id="admins-tab" data-bs-toggle="tab" data-bs-target="#tab-admins" type="button">
                     <i class="bi bi-person-badge-fill me-2"></i>ผู้ดูแลระบบ (Admins)
                 </button>
             </li>
@@ -85,78 +87,67 @@
 
         <div class="tab-content" id="configTabsContent">
             
-            <div class="tab-pane fade show active" id="tab-general" role="tabpanel">
+            <div class="tab-pane fade show active" id="tab-general">
                 <div class="card border-0 shadow-sm p-4">
                     <h5 class="fw-bold mb-3 text-primary">ข้อมูลห้องปฏิบัติการและระบบ</h5>
-                    
-                    <form method="post" action="{% url 'admin_config_update' %}">
+                    <form method="post" action="{% url 'admin_config_update' %}"> 
                         {% csrf_token %}
                         <input type="hidden" name="config_type" value="general">
                         
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-muted">ชื่อห้องปฏิบัติการ (Lab Name)</label>
-                                <input type="text" name="lab_name" class="form-control" value="{{ config.lab_name }}" placeholder="เช่น CKLab Computer Center">
+                                <label class="form-label small fw-bold text-muted">ชื่อห้องปฏิบัติการ</label>
+                                <input type="text" name="lab_name" class="form-control" value="{{ config.lab_name }}">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-muted">สถานที่ตั้ง (Location)</label>
-                                <input type="text" name="location" class="form-control" value="{{ config.location }}" placeholder="เช่น อาคาร 4 ชั้น 2">
+                                <label class="form-label small fw-bold text-muted">สถานที่ตั้ง</label>
+                                <input type="text" name="location" class="form-control" value="{{ config.location }}">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-muted">อีเมลติดต่อ (Contact Email)</label>
-                                <input type="email" name="contact_email" class="form-control" value="{{ config.contact_email }}" placeholder="admin@example.com">
+                                <label class="form-label small fw-bold text-muted">อีเมลติดต่อ</label>
+                                <input type="email" name="contact_email" class="form-control" value="{{ config.contact_email }}">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-muted">ระยะเวลาใช้งานสูงสุด (นาที)</label>
-                                <input type="number" name="max_usage_minutes" class="form-control" value="{{ config.max_usage_minutes }}" placeholder="180">
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold text-success">
-                                    <i class="bi bi-person-badge-fill me-1"></i>เจ้าหน้าที่ดูแลระบบ (Admin On Duty)
-                                </label>
-                                <input type="text" name="admin_on_duty" class="form-control" value="{{ config.admin_on_duty }}" placeholder="เช่น คุณสมชาย ใจดี">
+                                <label class="form-label small fw-bold text-muted">เวลาใช้งานสูงสุด (นาที)</label>
+                                <input type="number" name="max_usage_minutes" class="form-control" value="{{ config.max_usage_minutes }}">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold text-success">
-                                    <i class="bi bi-telephone-fill me-1"></i>เบอร์โทรศัพท์ติดต่อ (Contact Number)
-                                </label>
-                                <input type="text" name="contact_phone" class="form-control" value="{{ config.contact_phone }}" placeholder="เช่น 02-123-4567 ต่อ 101">
+                                <label class="form-label small fw-bold text-success">Admin On Duty</label>
+                                <input type="text" name="admin_on_duty" class="form-control" value="{{ config.admin_on_duty }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-success">เบอร์โทรศัพท์</label>
+                                <input type="text" name="contact_phone" class="form-control" value="{{ config.contact_phone }}">
                             </div>
                         </div>
 
                         <hr class="my-4">
 
                         <div class="bg-light p-3 rounded border">
-                            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-toggle-on me-2"></i>สถานะการให้บริการ</h6>
-                            <div class="mb-3">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="labStatusSwitch" name="is_open" {% if config.is_open %}checked{% endif %}>
-                                    <label class="form-check-label fw-bold {% if config.is_open %}text-success{% else %}text-danger{% endif %}" for="labStatusSwitch" id="labStatusLabel">
-                                        {% if config.is_open %}เปิดให้บริการ (Open){% else %}ปิดให้บริการ (Closed){% endif %}
-                                    </label>
-                                </div>
+                            <h6 class="fw-bold text-dark mb-3">สถานะการให้บริการ</h6>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" name="is_open" id="labStatusSwitch" {% if config.is_open %}checked{% endif %}>
+                                <label class="form-check-label fw-bold {% if config.is_open %}text-success{% else %}text-danger{% endif %}" for="labStatusSwitch" id="labStatusLabel">
+                                    {% if config.is_open %}เปิดให้บริการ (Open){% else %}ปิดให้บริการ (Closed){% endif %}
+                                </label>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label small fw-bold text-muted">ข้อความแจ้งเตือน (เมื่อปิดห้อง)</label>
-                                <input type="text" name="close_message" class="form-control" value="{{ config.close_message }}" placeholder="เช่น ปิดปรับปรุงระบบไฟฟ้า 13.00-15.00 น.">
+                                <label class="form-label small fw-bold text-muted">ข้อความแจ้งเตือนเมื่อปิด</label>
+                                <input type="text" name="close_message" class="form-control" value="{{ config.close_message }}">
                             </div>
                         </div>
                         
                         <div class="d-flex justify-content-end mt-4 pt-3 border-top">
-                            <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
-                                <i class="bi bi-save me-1"></i> บันทึกการตั้งค่า
-                            </button>
+                            <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">บันทึกการตั้งค่า</button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            <div class="tab-pane fade" id="tab-admins" role="tabpanel">
+            <div class="tab-pane fade" id="tab-admins">
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                         <h6 class="mb-0 fw-bold text-success">รายชื่อผู้ดูแลระบบ</h6>
-                        
                         <button type="button" class="btn btn-success btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#adminModal" onclick="resetAdminForm()">
                             <i class="bi bi-person-plus-fill me-1"></i> เพิ่มผู้ดูแล
                         </button>
@@ -168,6 +159,7 @@
                                     <tr>
                                         <th class="ps-4">ชื่อ-สกุล</th>
                                         <th>Username</th>
+                                        <th>Password</th> 
                                         <th>สิทธิ์</th>
                                         <th>สถานะ</th>
                                         <th class="text-end pe-4">จัดการ</th>
@@ -178,6 +170,20 @@
                                     <tr>
                                         <td class="ps-4 fw-bold">{{ admin.first_name }} {{ admin.last_name }}</td>
                                         <td>{{ admin.username }}</td>
+                                        
+                                        <td>
+                                            <div class="input-group input-group-sm" style="width: 180px;">
+                                                <input type="password" 
+                                                       class="form-control bg-transparent border-0 small text-muted font-monospace" 
+                                                       value="{{ admin.password }}" 
+                                                       id="tablePass-{{ admin.id }}" 
+                                                       readonly>
+                                                <button class="btn btn-link text-muted p-0 ms-1" type="button" onclick="toggleTablePassword('{{ admin.id }}')">
+                                                    <i class="bi bi-eye-slash" id="tableIcon-{{ admin.id }}"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+
                                         <td>
                                             {% if admin.is_superuser %}
                                                 <span class="badge bg-danger rounded-pill">Super Admin</span>
@@ -207,7 +213,7 @@
                                     </tr>
                                     {% empty %}
                                     <tr>
-                                        <td colspan="5" class="text-center py-4 text-muted">ไม่พบข้อมูลผู้ดูแลระบบ</td>
+                                        <td colspan="6" class="text-center py-4 text-muted">ไม่พบข้อมูลผู้ดูแลระบบ</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -229,7 +235,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <form method="post" action="{% url 'admin_manage_user' %}" id="adminForm">
+                <form method="post" action="{% url 'admin_manage_user' %}" id="adminForm"> 
                     {% csrf_token %}
                     <input type="hidden" name="user_id" id="adminId">
                     <input type="hidden" name="action" id="formAction" value="create">
@@ -242,10 +248,17 @@
                         <label class="form-label small fw-bold text-muted">Username</label>
                         <input type="text" name="username" id="adminUser" class="form-control" required>
                     </div>
+                    
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-muted">Password <span class="text-danger small" id="passHint">(เว้นว่างถ้าไม่เปลี่ยน)</span></label>
-                        <input type="password" name="password" id="adminPass" class="form-control">
+                        <div class="input-group">
+                            <input type="password" name="password" id="adminPass" class="form-control">
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility()">
+                                <i class="bi bi-eye-slash" id="togglePasswordIcon"></i>
+                            </button>
+                        </div>
                     </div>
+
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-muted">สิทธิ์การใช้งาน</label>
                         <select name="role" id="adminRole" class="form-select">
@@ -268,9 +281,43 @@
     <input type="hidden" name="user_id" id="deleteUserId">
     <input type="hidden" name="action" value="delete">
 </form>
-
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'cklab/js/admin-config.js' %}"></script>
+<script>
+    // 1. ฟังก์ชันกดดูรหัสผ่านใน Modal
+    function togglePasswordVisibility() {
+        const passwordInput = document.getElementById('adminPass');
+        const icon = document.getElementById('togglePasswordIcon');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
+        } else {
+            passwordInput.type = 'password';
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
+        }
+    }
+
+    // 2. ฟังก์ชันกดดูรหัสผ่านในตาราง (Table)
+    function toggleTablePassword(adminId) {
+        const input = document.getElementById(`tablePass-${adminId}`);
+        const icon = document.getElementById(`tableIcon-${adminId}`);
+
+        if (input && icon) {
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            }
+        }
+    }
+</script>
 {% endblock %}
