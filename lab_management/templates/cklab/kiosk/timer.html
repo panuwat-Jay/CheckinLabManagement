@@ -1,138 +1,65 @@
 {% extends 'cklab/base.html' %}
 {% load static %}
 
-{% block title %}กำลังใช้งาน (Active Session){% endblock %}
+{% block title %}Active Session{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-center align-items-center min-vh-100 py-4 bg-light">
-    
-    <!-- Card หลัก -->
-    <div class="card border-0 shadow-lg p-0 overflow-hidden" style="max-width: 450px; width: 100%; border-radius: 20px;">
+<div class="bg-light d-flex align-items-center justify-content-center min-vh-100 w-100 font-prompt position-absolute top-0 start-0">
+
+    <div class="timer-card text-center position-relative">
         
-        <!-- ส่วนหัว Gradient -->
-        <div class="bg-primary text-white text-center py-4 position-relative overflow-hidden">
-            <!-- Background Decoration -->
-            <div class="position-absolute top-0 start-0 w-100 h-100 bg-gradient opacity-50"></div>
-            
-            <div class="position-relative z-index-1">
-                <div class="bg-white rounded-circle d-inline-flex p-3 shadow-sm mb-3">
-                    <img src="{% static 'cklab/img/ubulogo.png' %}" alt="Logo" style="height: 50px;">
-                </div>
-                <h4 class="fw-bold mb-0">กำลังใช้งาน</h4>
-                <p class="mb-0 small opacity-75">CKLab Computer Center</p>
-            </div>
-        </div>
+        <div class="bg-primary w-100" style="height: 6px;"></div>
 
-        <div class="card-body p-4 text-center">
-            
-            <!-- ข้อมูลผู้ใช้ -->
-            <div class="mb-4">
-                <span class="badge bg-light text-dark border px-3 py-2 rounded-pill mb-2">
-                    <i class="bi bi-person-fill me-1 text-primary"></i> 
-                    {{ user_name|default:"ผู้ใช้งานทั่วไป" }}
-                </span>
-                <div class="text-muted small">
-                    เริ่มใช้งานเมื่อ: <span id="startTimeDisplay" class="fw-bold text-dark">--:--</span>
-                </div>
-            </div>
-
-            <!-- ตัวนับเวลา (Timer Display) -->
-            <div class="timer-container mb-4 position-relative d-inline-block">
-                <!-- วงกลมตกแต่ง -->
-                <div class="position-absolute top-50 start-50 translate-middle border border-5 border-light rounded-circle" style="width: 210px; height: 210px; z-index: 0;"></div>
-                
-                <div class="bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center border border-primary border-opacity-10 position-relative" style="width: 180px; height: 180px; z-index: 1; margin: 0 auto;">
-                    <div>
-                        <div class="display-4 fw-bold text-primary" id="timer" style="font-family: 'Courier New', monospace; letter-spacing: -2px;">
-                            00:00
-                        </div>
-                        <span class="d-block text-muted small mt-n2">นาที : วินาที</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ชั่วโมง (แสดงแยกถ้ามี) -->
-            <div id="hourDisplayContainer" class="mb-4 d-none">
-                <span class="badge bg-secondary">
-                    <i class="bi bi-clock"></i> <span id="hourText">0</span> ชั่วโมงผ่านไป
+        <div class="p-5">
+            <div class="mb-5">
+                <span class="station-badge">
+                    <i class="bi bi-display me-2"></i>{{ computer.name }}
                 </span>
             </div>
 
-            <!-- ขีดคั่น -->
-            <hr class="my-4 opacity-10">
+            <div class="mb-5">
+                <div class="display-1" id="timerDisplay" style="font-size: 5rem;">00:00:00</div>
+                <small class="text-muted opacity-75 fw-light mt-2 d-block">SESSION DURATION</small>
+            </div>
 
-            <!-- ปุ่มเลิกใช้งาน -->
-            <p class="text-muted small mb-2">เมื่อใช้งานเสร็จสิ้น กรุณากดปุ่มด้านล่าง</p>
-            <a href="{% url 'feedback' %}" class="btn btn-danger w-100 py-3 rounded-pill fw-bold shadow-sm transition-btn">
-                <i class="bi bi-power me-2"></i> เลิกใช้งาน / Check-out
-            </a>
+            <div class="mb-5">
+                <div class="d-flex align-items-center justify-content-center text-muted mb-1">
+                    <i class="bi bi-person-circle me-2"></i>User
+                </div>
+                <h4 class="text-primary fw-bold mb-0 text-truncate px-3">
+                    {{ user_name|default:"-" }}
+                </h4>
+            </div>
 
+            <div id="alertBox" class="alert alert-warning mb-4 d-none text-start border-0 bg-warning bg-opacity-10 text-dark rounded-3">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span id="alertMsg"></span>
+            </div>
+
+            <button onclick="doCheckout()" class="btn btn-outline-danger w-100 py-3 rounded-pill fw-bold border-2 hover-scale">
+                <i class="bi bi-power me-2"></i> Check Out
+            </button>
         </div>
-        
-        <!-- Footer Decoration -->
-        <div class="card-footer bg-light border-0 text-center py-3">
-            <small class="text-muted" style="font-size: 0.75rem;">
-                <span class="spinner-grow spinner-grow-sm text-success me-1" style="width: 0.5rem; height: 0.5rem;" role="status"></span>
-                ระบบกำลังบันทึกเวลาการใช้งาน
-            </small>
+
+        <div class="pb-4 opacity-25">
+             <img src="{% static 'cklab/img/ubulogo.png' %}" style="height: 25px; filter: grayscale(100%);">
         </div>
     </div>
+
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // 1. รับค่าเวลาเริ่มต้นจาก Django View (ส่งมาเป็น ISO String)
-        const startTimeStr = "{{ start_time }}";
-        
-        let startTime;
-        
-        if (startTimeStr && startTimeStr !== 'None') {
-            startTime = new Date(startTimeStr).getTime();
-            
-            // แสดงเวลาเริ่ม (HH:MM)
-            const dateObj = new Date(startTimeStr);
-            document.getElementById('startTimeDisplay').innerText = dateObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-        } else {
-            // Fallback กรณีไม่มีข้อมูล (เช่น refresh หน้าจอกระทันหัน) ให้เริ่มนับใหม่ ณ ตอนนี้
-            startTime = new Date().getTime();
-            document.getElementById('startTimeDisplay').innerText = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-        }
-
-        // 2. ฟังก์ชันอัปเดตเวลา
-        function updateTimer() {
-            const now = new Date().getTime();
-            const diff = now - startTime;
-
-            // ป้องกันเวลาติดลบ
-            if (diff < 0) return;
-
-            // คำนวณหน่วยเวลา
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-            // จัดรูปแบบตัวเลขให้มี 2 หลัก (00, 01, ...)
-            const mStr = minutes < 10 ? "0" + minutes : minutes;
-            const sStr = seconds < 10 ? "0" + seconds : seconds;
-
-            // แสดงผล นาที:วินาที
-            document.getElementById('timer').innerText = `${mStr}:${sStr}`;
-
-            // จัดการส่วนแสดงชั่วโมง (ถ้าเกิน 1 ชม. ให้โชว์ Badge)
-            const hourContainer = document.getElementById('hourDisplayContainer');
-            if (hours > 0) {
-                hourContainer.classList.remove('d-none');
-                document.getElementById('hourText').innerText = hours;
-            } else {
-                hourContainer.classList.add('d-none');
-            }
-        }
-
-        // 3. รัน Interval ทุก 1 วินาที
-        setInterval(updateTimer, 1000);
-        updateTimer(); // รันทันทีครั้งแรกไม่ต้องรอ 1 วิ
-    });
+    window.djangoData = {
+        pcId: "{{ computer.pc_id }}",
+        userName: "{{ user_name }}",
+        startTime: "{{ start_time }}",
+        forceEndTime: "{{ force_end_time|default:'' }}",
+        monitorUrl: "{% url 'api_monitor_data' %}",
+        feedbackUrl: "{% url 'feedback' %}",
+        indexUrl: "{% url 'index' %}?pc={{ computer.pc_id }}"
+    };
 </script>
+<script src="{% static 'cklab/js/timer.js' %}"></script>
 {% endblock %}

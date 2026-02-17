@@ -1,0 +1,21 @@
+{% extends 'cklab/base.html' %}
+{% load static %}
+{% block title %}Monitor{% endblock %}
+{% block content %}
+<div class="container-fluid p-4">
+    <h2 class="mb-4">🖥️ Monitor Dashboard</h2>
+    <div class="row g-3">
+        {% for pc in computers %}
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ pc.name }}</h5>
+                    <span class="badge {% if pc.status == 'available' %}bg-success{% else %}bg-danger{% endif %}">{{ pc.status }}</span>
+                    <p class="small text-muted mt-2">{{ pc.current_user|default:"-" }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

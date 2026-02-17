@@ -1,0 +1,134 @@
+/* --- Global & Theme --- */
+:root { 
+    --primary: #0d6efd; 
+    --accent: #003366; 
+}
+
+body { 
+    font-family: 'Kanit', sans-serif; 
+    background-color: #f8f9fa; 
+}
+
+/* --- Common Components --- */
+.card { border-radius: 15px; }
+.btn { border-radius: 10px; }
+
+/* --- Star Rating (Feedback) --- */
+.star-rating span.active { color: #ffc107; }
+.star-rating span { color: #ddd; transition: 0.2s; }
+
+/* --- Kiosk Specific (Index Page) --- */
+.kiosk-card { 
+    background-color: #fff; 
+}
+
+.status-indicator { 
+    display: inline-block; 
+    width: 10px; 
+    height: 10px; 
+    border-radius: 50%; 
+}
+
+.cursor-pointer { 
+    cursor: pointer; 
+}
+
+/* --- Timer Specific (Updated for Minimal White Layout) --- */
+
+/* ฟอนต์สำหรับหน้า Timer โดยเฉพาะ */
+.font-prompt { 
+    font-family: 'Prompt', sans-serif; 
+}
+
+/* ตัวเลข Timer */
+#timerDisplay {
+    font-variant-numeric: tabular-nums; /* เลขกว้างเท่ากัน ไม่ขยับ */
+    letter-spacing: -3px;
+    font-weight: 600;
+    color: #212529;
+    line-height: 1;
+}
+
+/* การ์ดหลักของหน้า Timer (แบบใหม่) */
+.timer-card {
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08); /* เงานุ่มๆ */
+    width: 100%;
+    max-width: 480px;
+    overflow: hidden;
+}
+
+/* Badge แสดงชื่อเครื่อง */
+.station-badge {
+    background-color: #e9ecef;
+    color: #495057;
+    font-weight: 600;
+    padding: 8px 20px;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+/* --- Animations --- */
+.animate-fade { 
+    animation: fadeIn 0.5s; 
+}
+
+@keyframes fadeIn { 
+    from { opacity: 0; } 
+    to { opacity: 1; } 
+}
+
+
+/*feedback*/
+/* --- Success Animation (Checkmark) --- */
+.success-animation { margin: 20px auto; }
+
+.checkmark {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 2;
+    stroke: #198754;
+    stroke-miterlimit: 10;
+    box-shadow: inset 0px 0px 0px #198754;
+    animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+    margin: 0 auto;
+}
+
+.checkmark__circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 2;
+    stroke-miterlimit: 10;
+    stroke: #198754;
+    fill: none;
+    animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark__check {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+
+@keyframes stroke { 100% { stroke-dashoffset: 0; } }
+@keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } }
+@keyframes fill { 100% { box-shadow: inset 0px 0px 0px 40px #fff; } }
+
+/* --- Star Rating (Updated) --- */
+.star-rating span {
+    font-size: 3rem;
+    color: #ddd;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.star-rating span.active {
+    color: #ffc107;
+    transform: scale(1.1);
+}

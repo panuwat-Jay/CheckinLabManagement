@@ -1,32 +1,28 @@
 from django.urls import path
+from django.contrib.auth import views as auth_views
 from . import views
 
 urlpatterns = [
-    # User Routes 
-    # ผู้รับผิดชอบ : ปภังกร 
-    path('', views.index, name='index'), # ผู้รับผิดชอบ : ปภังกร 
-    path('confirm/', views.confirm, name='confirm'), # ผู้รับผิดชอบ : ปภังกร 
-    path('timer/', views.timer, name='timer'), # ผู้รับผิดชอบ : ปภังกร 
-    path('feedback/', views.feedback, name='feedback'), # ผู้รับผิดชอบ : ปภังกร 
+    # 1. ฝั่งผู้ใช้งาน (User / Kiosk) - ผู้รับผิดชอบ: ปภังกร
+    path('', views.IndexView.as_view(), name='index'),
+    path('confirm/', views.ConfirmView.as_view(), name='confirm'),
+    path('timer/', views.TimerView.as_view(), name='timer'),
+    path('feedback/', views.FeedbackView.as_view(), name='feedback'),
 
+    # API สำหรับตรวจสอบผู้ใช้ (เพิ่มใหม่)
+    path('api/verify-user/', views.ApiVerifyUserView.as_view(), name='api_verify_user'),
 
+    # 2. ระบบ Login - ผู้รับผิดชอบ: สถาพร
+    path('admin-portal/login/', auth_views.LoginView.as_view(template_name='cklab/admin/admin-login.html'), name='login'),
+    path('admin-portal/logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
 
-    # Admin Routes
-    # ผู้รับผิดชอบ : สถาพร
-    path('admin-portal/login/', views.admin_login, name='admin_login'), # ผู้รับผิดชอบ : สถาพร
-    # ผู้รับผิดชอบ : ธนสิทธิ์
-    path('admin-portal/monitor/', views.admin_monitor, name='admin_monitor'),  # ผู้รับผิดชอบ : ธนสิทธิ์
-    # ผู้รับผิดชอบ : อัษฎาวุธ
-    path('admin-portal/booking/', views.admin_booking, name='admin_booking'), # ผู้รับผิดชอบ : อัษฎาวุธ
-    # ผู้รับผิดชอบ : ณัฐกรณ์
-    path('admin-portal/manage-pc/', views.admin_manage_pc, name='admin_manage_pc'), # ผู้รับผิดชอบ : ณัฐกรณ์
-    # ผู้รับผิดชอบ : ลลิดา
-    path('admin-portal/software/', views.admin_software, name='admin_software'), # ผู้รับผิดชอบ : ลลิดา
-    # ผู้รับผิดชอบ : เขมมิกา
-    path('admin-portal/report/', views.admin_report, name='admin_report'), # ผู้รับผิดชอบ : เขมมิกา
-    # ผู้รับผิดชอบ : ภานุวัฒน์
-    path('admin-portal/config/', views.admin_config, name='admin_config'), # ผู้รับผิดชอบ : ภานุวัฒน์
-
-    # API Routes
-    path('api/monitor-data/', views.api_monitor_data, name='api_monitor_data'),
+    # 3. ฝั่งผู้ดูแลระบบ (Admin Portal)
+    path('admin-portal/monitor/', views.AdminMonitorView.as_view(), name='admin_monitor'), # ธนสิทธิ์
+    path('api/monitor-data/', views.ApiMonitorDataView.as_view(), name='api_monitor_data'), # ธนสิทธิ์ (สำหรับหน้า Admin Monitor)
+    path('admin-portal/booking/', views.AdminBookingView.as_view(), name='admin_booking'), # อัษฎาวุธ
+    path('admin-portal/manage-pc/', views.AdminManagePcView.as_view(), name='admin_manage_pc'), # ณัฐกรณ์
+    path('admin-portal/software/', views.AdminSoftwareView.as_view(), name='admin_software'), # ลลิดา
+    path('admin-portal/report/', views.AdminReportView.as_view(), name='admin_report'), # เขมมิกา
+    path('admin-portal/report/export/', views.AdminReportExportView.as_view(), name='admin_report_export'), # เขมมิกา
+    path('admin-portal/config/', views.AdminConfigView.as_view(), name='admin_config'), # ภานุวัฒน์
 ]

@@ -1,0 +1,54 @@
+{% extends "cklab/base.html" %}
+{% block title %}ตั้งค่าระบบ — CKLab{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 640px;">
+    <h2 class="mb-4"><i class="bi bi-gear"></i> ตั้งค่าระบบ</h2>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="lab_name" class="form-label fw-bold">ชื่อห้องแลป</label>
+                    <input type="text" class="form-control" id="lab_name" name="lab_name"
+                           value="{{ config.lab_name }}" required maxlength="100">
+                </div>
+
+                <div class="mb-3">
+                    <label for="max_session_minutes" class="form-label fw-bold">เวลาจำกัด Session (นาที)</label>
+                    <input type="number" class="form-control" id="max_session_minutes" name="max_session_minutes"
+                           value="{{ config.max_session_minutes }}" min="1" required>
+                </div>
+
+                <div class="mb-3 form-check form-switch">
+                    <input type="checkbox" class="form-check-input" id="booking_enabled" name="booking_enabled"
+                           {% if config.booking_enabled %}checked{% endif %}>
+                    <label class="form-check-label fw-bold" for="booking_enabled">เปิดระบบจอง</label>
+                </div>
+
+                <div class="mb-3">
+                    <label for="announcement" class="form-label fw-bold">ข้อความประกาศ</label>
+                    <textarea class="form-control" id="announcement" name="announcement"
+                              rows="3" placeholder="ข้อความที่จะแสดงบนหน้า Kiosk (เว้นว่างถ้าไม่มี)">{{ config.announcement }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg"></i> บันทึก
+        </button>
+        <a href="{% url 'admin_monitor' %}" class="btn btn-outline-secondary ms-2">กลับหน้า Monitor</a>
+    </form>
+</div>
+{% endblock %}
