@@ -1,40 +1,32 @@
 /* =========================================
-   Admin Login Styles (Spacious & Fixed)
+   1. ADMIN LOGIN STYLES (Spacious & Fixed)
    ========================================= */
 
-/* 1. การ์ด Login */
+/* การ์ด Login */
 .kiosk-card {
     background-color: #ffffff;
-    border-radius: 35px; /* เพิ่มความมนให้รับกับขนาดที่ใหญ่ขึ้น */
+    border-radius: 35px;
     box-shadow: 0 15px 50px rgba(0,0,0,0.1);
     border: none;
-    
-    /* Responsive Size */
     width: 90%;
-    /* 🔥 ขยายความกว้างกลับมาที่ 520px ให้ดูไม่อึดอัด */
     max-width: 520px;
-    
-    /* ยังคงล็อคความสูงไว้ เพื่อไม่ให้หน้าเว็บเลื่อน */
     max-height: 95vh; 
     overflow-y: auto; 
-    
     margin: 0 auto;
 }
 
-/* 2. ส่วนหัวการ์ด (เพิ่มพื้นที่ให้โลโก้) */
+/* ส่วนหัวการ์ด */
 .kiosk-header {
     text-align: center;
-    /* 🔥 แก้ตรงนี้: เพิ่มข้างบนเป็น 3.5rem (เดิม 2rem) ให้โลโก้หายใจสะดวก */
     padding: 3.5rem 3rem 1rem; 
 }
 
-/* 3. ส่วนเนื้อหา */
+/* ส่วนเนื้อหา */
 .kiosk-body {
-    /* ขยายขอบข้างเป็น 3.5rem ให้รับกับ Header */
     padding: 0 3.5rem 3rem; 
 }
 
-/* 4. ป้าย Badge */
+/* ป้าย Badge */
 .admin-badge {
     background-color: #ffeaea;
     color: #dc3545;
@@ -47,7 +39,7 @@
     letter-spacing: 0.5px;
 }
 
-/* 5. ช่องกรอกข้อมูล */
+/* ช่องกรอกข้อมูล */
 .text-label {
     font-size: 0.95rem;
     font-weight: 600;
@@ -60,7 +52,7 @@
 .input-group {
     background-color: #f8f9fa;
     border-radius: 50px;
-    padding: 6px; /* เพิ่มความหนากลับมานิดนึง */
+    padding: 6px;
     border: 1px solid transparent;
     transition: all 0.3s ease;
 }
@@ -84,7 +76,7 @@
 .form-control {
     background-color: transparent;
     border: none;
-    height: 48px; /* เพิ่มความสูงกลับมาให้กดง่าย */
+    height: 48px;
     font-size: 1.05rem;
     color: #495057;
     padding-left: 5px;
@@ -95,10 +87,10 @@
     background-color: transparent;
 }
 
-/* 6. ปุ่ม Login */
+/* ปุ่ม Login */
 .btn-primary {
     border-radius: 50px;
-    padding: 14px; /* ปุ่มใหญ่ขึ้น */
+    padding: 14px;
     font-size: 1.1rem;
     font-weight: 600;
     box-shadow: 0 4px 6px rgba(13, 110, 253, 0.2);
@@ -126,4 +118,166 @@
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* =========================================
+   2. ADMIN MONITOR DASHBOARD STYLES
+   ========================================= */
+
+/* --- STAT CARDS (Top Summary) --- */
+.stat-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-left-width: 5px !important;
+    cursor: pointer;
+    background: #fff;
+    min-height: 100px;
+}
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+}
+.stat-card:active { transform: scale(0.98); }
+
+.monitor-icon-box {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* --- BORDER COLORS UTILITY --- */
+.border-success-start { border-left-color: #198754 !important; }
+.border-danger-start { border-left-color: #dc3545 !important; }
+.border-warning-start { border-left-color: #ffc107 !important; }
+.border-secondary-start { border-left-color: #6c757d !important; }
+.border-top-success { border-top-color: #198754 !important; }
+.border-top-danger { border-top-color: #dc3545 !important; }
+.border-top-warning { border-top-color: #ffc107 !important; }
+.border-top-secondary { border-top-color: #6c757d !important; }
+
+/* --- FILTER BUTTONS GROUP --- */
+.filter-btn-group .btn {
+    border-radius: 50px;
+    padding: 0.375rem 1rem;
+    font-size: 0.9rem;
+    margin-left: 5px;
+    font-weight: 500;
+}
+.filter-btn-group .btn.active {
+    font-weight: 600;
+    box-shadow: inset 0 3px 5px rgba(0,0,0,0.125);
+}
+
+/* --- SEARCH PILL (Rounded Search Box) --- */
+.search-pill .input-group-text {
+    background-color: #fff;
+    border-radius: 50px 0 0 50px;
+    border-right: none;
+    padding-left: 20px;
+}
+.search-pill .form-control {
+    background-color: #fff;
+    border-radius: 0 50px 50px 0;
+    border-left: none;
+    padding-left: 0;
+}
+.search-pill .form-control:focus {
+    box-shadow: none;
+    border-color: #ced4da;
+}
+
+/* --- PC CARD (Grid Items) --- */
+.pc-card-hover {
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    border-top: 4px solid transparent; 
+}
+.pc-card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+}
+
+/* --- FEEDBACK STYLES --- */
+.feedback-item {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 5px solid #ddd;
+}
+.feedback-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
+}
+.avatar-circle {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; color: white; font-size: 1.2rem;
+}
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+
+
+/* =========================================
+   3. MODERN MODAL UI STYLES (NEW)
+   ========================================= */
+
+/* Hero Header (พื้นหลังสีพร้อม Icon จางๆ) */
+.modal-header-hero {
+    padding: 2rem 2rem 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Decoration Icon ใน Header */
+.modal-bg-deco {
+    position: absolute;
+    right: -20px;
+    bottom: -30px;
+    font-size: 8rem;
+    opacity: 0.15;
+    transform: rotate(-10deg);
+    pointer-events: none;
+}
+
+/* Avatar ขนาดใหญ่ใน Result Card */
+.avatar-circle-lg {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+/* Animation: Slide Up */
+.animate-slide-up {
+    animation: slideUp 0.3s ease-out forwards;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Hover Effect สำหรับปุ่มใน Modal */
+.transition-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.transition-hover:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.2) !important;
+}
+
+/* Modal Inputs & Utilities */
+.form-control:focus, .btn:focus {
+    box-shadow: none !important;
+}
+
+.bg-light-subtle {
+    background-color: #f8f9fa;
+}
+
+.ls-1 {
+    letter-spacing: 1px;
 }

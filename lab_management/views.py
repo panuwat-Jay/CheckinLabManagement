@@ -2,11 +2,13 @@ import csv
 import json
 import base64
 import requests
-import urllib3  # สำหรับจัดการ SSL Warning
+import urllib3
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
@@ -20,14 +22,9 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- Helper Function for UBU API ---
 def verify_ubu_user(user_id):
-    """
-    ตรวจสอบข้อมูลผู้ใช้จาก UBU API
-    Ref: Doc API DSSI Project (Page 1-2)
-    Note: ปรับปรุงให้รองรับ Response จริงที่เป็น Dict และ Status 201
-    """
+    """ ตรวจสอบข้อมูลผู้ใช้จาก UBU API """
     url = "https://esapi.ubu.ac.th/api/v1/student/reg-data"
     
-    # Encode user_id to Base64
     try:
         encoded_id = base64.b64encode(user_id.encode('utf-8')).decode('utf-8')
     except Exception as e:
@@ -38,9 +35,7 @@ def verify_ubu_user(user_id):
     headers = {'Content-Type': 'application/json'}
 
     try:
-        # verify=False เพื่อข้ามการตรวจสอบ SSL
         response = requests.post(url, headers=headers, data=payload, timeout=10, verify=False)
-        print(f"API Check: {user_id} -> Status {response.status_code}")
         
         if response.status_code in [200, 201]:
             result_json = response.json()
@@ -69,16 +64,13 @@ def verify_ubu_user(user_id):
                         'faculty': faculty,
                         'user_type': user_type
                     }
-            else:
-                print(f"User {user_id} not found in API response data.")
-                
     except requests.exceptions.RequestException as e:
         print(f"API Connection Error: {e}")
     
     return None
 
 
-# --- User / Kiosk Side (ปภังกร) ---
+# --- User / Kiosk Side ---
 
 class IndexView(View):
     def get(self, request):
@@ -101,7 +93,6 @@ class IndexView(View):
     def post(self, request):
         user_id = request.POST.get('user_id')
         user_name = request.POST.get('user_name') 
-        user_type = request.POST.get('user_type', 'internal')
         pc_id = request.POST.get('pc_id')
 
         if not user_id or not pc_id:
@@ -180,6 +171,7 @@ class FeedbackView(View):
                 user_name=user_name,
                 computer=computer,
                 start_time=start_time,
+                end_time=timezone.now(),
                 satisfaction_score=rating if rating else 5
             )
             
@@ -200,48 +192,70 @@ class FeedbackView(View):
 class AdminMonitorView(LoginRequiredMixin, View):
     def get(self, request):
         computers = Computer.objects.all().order_by('pc_id')
-        return render(request, 'cklab/admin_monitor.html', {'computers': computers})
+        config = SiteConfig.objects.first()
         
-    def post(self, request):
-        return redirect('admin_monitor')
+        stats = {
+            'total': computers.count(),
+            'available': computers.filter(status='available').count(),
+            'in_use': computers.filter(status='in_use').count(),
+            'maintenance': computers.filter(status='maintenance').count(),
+        }
+        return render(request, 'cklab/admin/admin-monitor.html', { 
+            'computers': computers,
+            'stats': stats,
+            'config': config
+        })
 
 class AdminBookingView(LoginRequiredMixin, View):
     def get(self, request):
         bookings = Booking.objects.all()
-        return render(request, 'cklab/admin_booking.html', {'bookings': bookings})
-        
-    def post(self, request):
-        return redirect('admin_booking')
-
-class AdminImportBookingView(LoginRequiredMixin, View):
-    def post(self, request):
-        messages.success(request, "นำเข้าข้อมูลสำเร็จ (ระบบจำลอง)")
-        return redirect('admin_booking')
+        return render(request, 'cklab/admin/admin_booking.html', {'bookings': bookings})
 
 class AdminManagePcView(LoginRequiredMixin, View):
     def get(self, request):
         computers = Computer.objects.all().order_by('pc_id')
-        return render(request, 'cklab/admin_manage.html', {'computers': computers})
+        return render(request, 'cklab/admin/admin_manage.html', {'computers': computers})
         
     def post(self, request):
+        action = request.POST.get('action')
+        pc_id = request.POST.get('pc_id')
+        
+        if pc_id:
+            computer = get_object_or_404(Computer, pc_id=pc_id)
+            
+            # กรณีสั่ง Force Stop (จากหน้า Monitor)
+            if action == 'force_stop':
+                if computer.status == 'in_use':
+                    UsageLog.objects.create(
+                        user_id='Admin-Forced',
+                        user_name=computer.current_user,
+                        computer=computer,
+                        start_time=computer.session_start or timezone.now(),
+                        end_time=timezone.now(),
+                        satisfaction_score=5
+                    )
+                
+                computer.status = 'available'
+                computer.current_user = None
+                computer.session_start = None
+                computer.save()
+                messages.success(request, f"สั่ง Force Logout เครื่อง {computer.name} เรียบร้อยแล้ว")
+                return redirect('admin_monitor') # กลับไปหน้า Monitor
+        
         return redirect('admin_manage_pc')
 
 class AdminSoftwareView(LoginRequiredMixin, View):
     def get(self, request):
         softwares = Software.objects.all()
-        return render(request, 'cklab/admin_software.html', {'softwares': softwares})
-        
-    def post(self, request):
-        return redirect('admin_software')
+        return render(request, 'cklab/admin/admin_software.html', {'softwares': softwares})
 
 class AdminReportView(LoginRequiredMixin, View):
     def get(self, request):
-        logs = UsageLog.objects.all()
-        return render(request, 'cklab/admin_report.html', {'logs': logs})
+        logs = UsageLog.objects.all().order_by('-start_time')
+        return render(request, 'cklab/admin/admin_report.html', {'logs': logs})
 
 class AdminReportExportView(LoginRequiredMixin, View):
     def get(self, request):
-        # โค้ดสำหรับ Export CSV สามารถใส่ตรงนี้
         return HttpResponse("ระบบส่งออกไฟล์ CSV")
 
 # --- System Config & Manage User ---
@@ -254,7 +268,7 @@ class AdminConfigView(LoginRequiredMixin, View):
             
         admins = User.objects.all().order_by('-is_superuser', 'username')
         
-        return render(request, 'cklab/admin/admin-config.html', {
+        return render(request, 'cklab/admin/admin_config.html', {
             'config': config, 
             'admins': admins
         })
@@ -280,12 +294,14 @@ class AdminConfigView(LoginRequiredMixin, View):
             
         return redirect('admin_config')
 
-class AdminManageUserView(LoginRequiredMixin, View):
-    """ คลาสสำหรับเพิ่ม, แก้ไข, ลบ User ผู้ดูแลระบบ (รับค่าจาก Modal ในหน้า Config) """
-    def post(self, request):
-        action = request.POST.get('action')
-        user_id = request.POST.get('user_id')
-        
+@login_required
+@require_POST
+def admin_manage_user(request):
+    """ ฟังก์ชันสำหรับเพิ่ม, แก้ไข, ลบ User ผู้ดูแลระบบ (รับค่าจาก Modal) """
+    action = request.POST.get('action')
+    user_id = request.POST.get('user_id')
+    
+    try:
         # 1. สร้างผู้ใช้ใหม่
         if action == 'create':
             username = request.POST.get('username')
@@ -296,19 +312,23 @@ class AdminManageUserView(LoginRequiredMixin, View):
             if User.objects.filter(username=username).exists():
                 messages.error(request, f'ชื่อผู้ใช้ "{username}" มีอยู่ในระบบแล้ว')
             else:
-                first_name = full_name.split()[0] if full_name else ''
-                last_name = " ".join(full_name.split()[1:]) if len(full_name.split()) > 1 else ''
+                if ' ' in full_name:
+                    first_name, last_name = full_name.split(' ', 1)
+                else:
+                    first_name, last_name = full_name, ''
+                
                 is_super = (role == 'Super Admin')
                 
+                # สร้าง User พร้อมกำหนด Password
                 User.objects.create_user(
                     username=username, 
                     password=password, 
                     first_name=first_name, 
                     last_name=last_name, 
                     is_superuser=is_super, 
-                    is_staff=True
+                    is_staff=True # ต้องเป็น Staff ถึงจะเข้า Admin ได้
                 )
-                messages.success(request, 'เพิ่มผู้ดูแลระบบเรียบร้อยแล้ว')
+                messages.success(request, f'เพิ่มผู้ดูแลระบบ "{username}" เรียบร้อยแล้ว')
                 
         # 2. แก้ไขผู้ใช้
         elif action == 'update':
@@ -317,15 +337,18 @@ class AdminManageUserView(LoginRequiredMixin, View):
             password = request.POST.get('password')
             role = request.POST.get('role')
             
-            user.first_name = full_name.split()[0] if full_name else ''
-            user.last_name = " ".join(full_name.split()[1:]) if len(full_name.split()) > 1 else ''
+            if ' ' in full_name:
+                user.first_name, user.last_name = full_name.split(' ', 1)
+            else:
+                user.first_name, user.last_name = full_name, ''
+                
             user.is_superuser = (role == 'Super Admin')
             
-            if password: # อัปเดตพาสเวิร์ดหากมีการกรอกมา
+            if password and password.strip(): 
                 user.set_password(password)
                 
             user.save()
-            messages.success(request, 'อัปเดตข้อมูลผู้ดูแลระบบเรียบร้อยแล้ว')
+            messages.success(request, f'อัปเดตข้อมูล "{user.username}" เรียบร้อยแล้ว')
             
         # 3. ลบผู้ใช้
         elif action == 'delete':
@@ -333,17 +356,29 @@ class AdminManageUserView(LoginRequiredMixin, View):
             if user.id == request.user.id:
                 messages.error(request, 'ไม่สามารถลบบัญชีของตนเองที่กำลังเข้าสู่ระบบได้')
             else:
+                username_del = user.username
                 user.delete()
-                messages.success(request, 'ลบผู้ดูแลระบบเรียบร้อยแล้ว')
-                
-        return redirect('admin_config')
+                messages.success(request, f'ลบผู้ดูแลระบบ "{username_del}" เรียบร้อยแล้ว')
+
+    except Exception as e:
+        messages.error(request, f'เกิดข้อผิดพลาด: {str(e)}')
+            
+    return redirect('admin_config')
 
 
-# --- API (ธนสิทธิ์) ---
+# --- API Data Endpoint ---
 
 class ApiMonitorDataView(View):
     def get(self, request):
-        # ดึงข้อมูลคอมพิวเตอร์ทั้งหมดเพื่อส่งให้หน้า Monitor หรือ Timer เช็คสถานะ
-        computers = Computer.objects.all().values('pc_id', 'name', 'status', 'current_user')
+        computers = Computer.objects.all().values('pc_id', 'name', 'status', 'current_user', 'session_start')
         data = list(computers)
-        return JsonResponse({'data': data})
+        
+        # คำนวณเวลาที่ใช้ไป (Elapsed Time)
+        for pc in data:
+            if pc['session_start'] and pc['status'] == 'in_use':
+                diff = timezone.now() - pc['session_start']
+                pc['elapsed_seconds'] = int(diff.total_seconds())
+            else:
+                pc['elapsed_seconds'] = 0
+                
+        return JsonResponse({'success': True, 'data': data})

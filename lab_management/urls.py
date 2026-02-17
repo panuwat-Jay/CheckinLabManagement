@@ -28,5 +28,7 @@ urlpatterns = [
     # 4. System Config & Manage User - ภานุวัฒน์
     path('admin-portal/config/', views.AdminConfigView.as_view(), name='admin_config'), 
     path('admin-portal/config/update/', views.AdminConfigView.as_view(), name='admin_config_update'), 
-    path('admin-portal/config/manage-user/', views.AdminManageUserView.as_view(), name='admin_manage_user'), 
+    
+    # 🔥 แก้ไขตรงนี้: ลบ .as_view() ออก เพราะใน views.py เป็น def (function) แล้ว
+    path('admin-portal/config/manage-user/', views.admin_manage_user, name='admin_manage_user'), 
 ]

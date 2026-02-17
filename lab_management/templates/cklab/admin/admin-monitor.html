@@ -1,21 +1,392 @@
 {% extends 'cklab/base.html' %}
 {% load static %}
-{% block title %}Monitor{% endblock %}
+
+{% block title %}Monitor Dashboard - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'cklab/css/admin.css' %}" rel="stylesheet">
+<link href="{% static 'cklab/css/admin-monitor.css' %}" rel="stylesheet">
+<style>
+    /* =========================================
+       1. Custom Styles สำหรับ Modal
+       ========================================= */
+    .modal-header-hero {
+        padding: 2rem 2rem 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .modal-bg-deco {
+        position: absolute;
+        right: -20px;
+        bottom: -30px;
+        font-size: 8rem;
+        opacity: 0.15;
+        transform: rotate(-10deg);
+        pointer-events: none;
+    }
+    .avatar-circle-lg {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+
+    /* =========================================
+       2. Custom Styles สำหรับ PC Status Cards (นำไปใส่ admin.css ทีหลังได้)
+       ========================================= */
+    .pc-card-modern {
+        background-color: #ffffff;
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Hover Effect: การ์ดยกตัวขึ้นและเงาเข้มขึ้น */
+    .pc-card-modern:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    /* แถบสีด้านซ้ายบอกสถานะ */
+    .pc-card-modern::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        transition: width 0.2s ease;
+    }
+    .pc-card-modern:hover::before {
+        width: 8px; /* ขยายขอบซ้ายตอน Hover */
+    }
+
+    /* สีสถานะต่างๆ */
+    .status-available::before { background-color: #198754; } /* เขียว */
+    .status-in_use::before { background-color: #dc3545; }    /* แดง */
+    .status-maintenance::before { background-color: #6c757d; } /* เทา */
+
+    /* วงกลมพื้นหลังไอคอน */
+    .pc-icon-wrapper {
+        width: 55px;
+        height: 55px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: transform 0.3s ease;
+    }
+    .pc-card-modern:hover .pc-icon-wrapper {
+        transform: scale(1.15); /* ไอคอนใหญ่ขึ้นตอน Hover */
+    }
+
+    /* ป้าย Badge เล็กๆ */
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 4px 12px;
+        border-radius: 50px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid p-4">
-    <h2 class="mb-4">🖥️ Monitor Dashboard</h2>
-    <div class="row g-3">
-        {% for pc in computers %}
-        <div class="col-6 col-md-4 col-lg-2">
-            <div class="card text-center shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">{{ pc.name }}</h5>
-                    <span class="badge {% if pc.status == 'available' %}bg-success{% else %}bg-danger{% endif %}">{{ pc.status }}</span>
-                    <p class="small text-muted mt-2">{{ pc.current_user|default:"-" }}</p>
+<div class="d-flex">
+    
+    <div id="sidebar-container" class="bg-white shadow-sm" style="width: 250px; min-height: 100vh;">
+        <div class="p-3">
+            <a href="#" class="text-decoration-none text-dark fs-5 fw-bold d-block mb-4">
+                <i class="bi bi-shield-lock text-primary me-2"></i>Admin Panel
+            </a>
+            <nav class="nav flex-column gap-2">
+                <a href="{% url 'admin_monitor' %}" class="nav-link active bg-primary bg-opacity-10 text-primary fw-bold rounded p-2">
+                    <i class="bi bi-grid-fill me-2"></i> Monitor
+                </a>
+                <a href="{% url 'admin_manage_pc' %}" class="nav-link text-dark rounded hover-bg-light p-2">
+                    <i class="bi bi-pc-display me-2 text-muted"></i> Manage PC
+                </a>
+                <a href="{% url 'admin_booking' %}" class="nav-link text-dark rounded hover-bg-light p-2">
+                    <i class="bi bi-calendar-check-fill me-2 text-muted"></i> Booking
+                </a>
+                <a href="{% url 'admin_config' %}" class="nav-link text-dark rounded hover-bg-light p-2">
+                    <i class="bi bi-sliders me-2 text-muted"></i> System Config
+                </a>
+                <a href="{% url 'admin_report' %}" class="nav-link text-dark rounded hover-bg-light p-2">
+                    <i class="bi bi-file-earmark-bar-graph-fill me-2 text-muted"></i> Reports
+                </a>
+                
+                <div class="border-top my-3"></div>
+                
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-link text-danger border-0 bg-transparent w-100 text-start p-2 rounded hover-bg-light" onclick="return confirm('ยืนยันออกจากระบบ?');">
+                        <i class="bi bi-box-arrow-right me-2"></i> Logout
+                    </button>
+                </form>
+            </nav>
+        </div>
+    </div>
+
+    <div class="flex-grow-1 p-4 bg-light" style="height: 100vh; overflow-y: auto;">
+        
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <div>
+                <h3 class="fw-bold text-dark mb-1">🖥️ Monitor Dashboard</h3>
+                <p class="text-muted small mb-0">ภาพรวมสถานะเครื่องคอมพิวเตอร์แบบ Real-time</p>
+            </div>
+            <div class="d-flex align-items-center bg-white px-3 py-2 rounded-pill shadow-sm border">
+                <i class="bi bi-clock-history text-primary me-2 fs-5"></i>
+                <span id="clockDisplay" class="fw-bold text-dark" style="font-family: monospace; font-size: 1.2rem;">00:00:00</span>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card bg-success text-white h-100 border-0 shadow-sm overflow-hidden position-relative stat-card" onclick="filterPC('available')" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-3 position-relative z-1">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-pc-display-horizontal fs-4 me-2 opacity-75"></i>
+                            <div class="small text-white fw-bold text-uppercase" style="letter-spacing: 0.5px;">ว่าง (Available)</div>
+                        </div>
+                        <h2 class="fw-bold mb-0 text-white ps-1" id="count-available">{{ stats.available|default:"0" }}</h2>
+                    </div>
+                    <i class="bi bi-check-circle position-absolute end-0 bottom-0 text-white" style="font-size: 5rem; opacity: 0.2; margin-bottom: -10px; margin-right: -10px; transform: rotate(-15deg);"></i>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="card bg-danger text-white h-100 border-0 shadow-sm overflow-hidden position-relative stat-card" onclick="filterPC('in_use')" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-3 position-relative z-1">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-person-video2 fs-4 me-2 opacity-75"></i>
+                            <div class="small text-white fw-bold text-uppercase" style="letter-spacing: 0.5px;">ใช้งาน (In Use)</div>
+                        </div>
+                        <h2 class="fw-bold mb-0 text-white ps-1" id="count-in_use">{{ stats.in_use|default:"0" }}</h2>
+                    </div>
+                    <i class="bi bi-person-fill position-absolute end-0 bottom-0 text-white" style="font-size: 5rem; opacity: 0.2; margin-bottom: -10px; margin-right: -10px; transform: rotate(-15deg);"></i>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <div class="card bg-secondary text-white h-100 border-0 shadow-sm overflow-hidden position-relative stat-card" onclick="filterPC('maintenance')" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-3 position-relative z-1">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-tools fs-4 me-2 opacity-75"></i>
+                            <div class="small text-white fw-bold text-uppercase" style="letter-spacing: 0.5px;">แจ้งซ่อม (Maint.)</div>
+                        </div>
+                        <h2 class="fw-bold mb-0 text-white ps-1" id="count-maintenance">{{ stats.maintenance|default:"0" }}</h2>
+                    </div>
+                    <i class="bi bi-cone-striped position-absolute end-0 bottom-0 text-white" style="font-size: 5rem; opacity: 0.2; margin-bottom: -10px; margin-right: -10px; transform: rotate(-15deg);"></i>
+                </div>
+            </div>
+            
+            <div class="col-6 col-md-3">
+                <div class="card bg-info text-white h-100 border-0 shadow-sm overflow-hidden position-relative stat-card" onclick="filterPC('all')" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="card-body p-3 position-relative z-1">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-grid-3x3-gap-fill fs-4 me-2 opacity-75"></i>
+                            <div class="small text-white fw-bold text-uppercase" style="letter-spacing: 0.5px;">ทั้งหมด (Total)</div>
+                        </div>
+                        <h2 class="fw-bold mb-0 text-white ps-1" id="count-total">{{ stats.total|default:"0" }}</h2>
+                    </div>
+                    <i class="bi bi-server position-absolute end-0 bottom-0 text-white" style="font-size: 5rem; opacity: 0.2; margin-bottom: -10px; margin-right: -10px; transform: rotate(-15deg);"></i>
                 </div>
             </div>
         </div>
-        {% endfor %}
+
+        <div class="card border-0 shadow-sm mb-4 rounded-4">
+            <div class="card-body py-2 px-3">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <div class="input-group search-pill">
+                            <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" class="form-control border-start-0 ps-0" id="searchPC" placeholder="ค้นหาชื่อเครื่อง..." onkeyup="searchPC()">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="input-group search-pill">
+                            <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-calendar-event text-primary"></i></span>
+                            <input type="date" class="form-control border-start-0 ps-0 text-primary fw-bold" id="monitorDate" value="{% now 'Y-m-d' %}">
+                        </div>
+                    </div>
+                    <div class="col-md-5 d-flex justify-content-md-end mt-2 mt-md-0 gap-1 filter-btn-group">
+                        <button class="btn active rounded-pill px-3" onclick="filterPC('all')" id="btn-all" style="background-color: #e9ecef;">ทั้งหมด</button>
+                        <button class="btn btn-outline-success rounded-pill px-3" onclick="filterPC('available')" id="btn-available">ว่าง</button>
+                        <button class="btn btn-outline-danger rounded-pill px-3" onclick="filterPC('in_use')" id="btn-in_use">ใช้งาน</button>
+                        <button class="btn btn-outline-secondary rounded-pill px-3" onclick="filterPC('maintenance')" id="btn-maintenance">ซ่อม</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3" id="monitorGrid">
+            {% for pc in computers %}
+            <div class="col-6 col-md-4 col-lg-3 col-xl-2 pc-item" data-status="{{ pc.status }}" data-name="{{ pc.name }}">
+                
+                <div class="card h-100 pc-card-modern status-{{ pc.status }}"
+                    onclick="handlePcClick('{{ pc.pc_id }}', '{{ pc.name }}', '{{ pc.status }}', '{{ pc.current_user|default_if_none:'' }}')">
+                    
+                    <div class="card-body text-center p-3 d-flex flex-column align-items-center justify-content-center">
+                        
+                        <div class="mb-3 pc-icon-wrapper 
+                            {% if pc.status == 'available' %}bg-success text-white bg-opacity-10
+                            {% elif pc.status == 'in_use' %}bg-danger text-white bg-opacity-10
+                            {% else %}bg-secondary text-white bg-opacity-10{% endif %}">
+                            
+                            {% if pc.status == 'available' %}
+                                <i class="bi bi-display display-6 text-success"></i>
+                            {% elif pc.status == 'in_use' %}
+                                <i class="bi bi-person-fill display-6 text-danger"></i>
+                            {% else %}
+                                <i class="bi bi-tools display-6 text-secondary"></i>
+                            {% endif %}
+                        </div>
+                        
+                        <h5 class="fw-bold mb-2 text-dark">{{ pc.name }}</h5>
+                        
+                        {% if pc.status == 'available' %}
+                            <div class="status-badge bg-success bg-opacity-10 text-success mb-1">ว่างพร้อมใช้งาน</div>
+                            <div class="text-muted" style="font-size: 0.7rem;">-</div>
+                        {% elif pc.status == 'in_use' %}
+                            <div class="status-badge bg-danger bg-opacity-10 text-danger mb-1">กำลังใช้งาน</div>
+                            <div class="text-danger fw-bold text-truncate w-100 px-2" style="font-size: 0.75rem;">{{ pc.current_user }}</div>
+                        {% else %}
+                            <div class="status-badge bg-secondary bg-opacity-10 text-secondary mb-1">แจ้งซ่อม</div>
+                            <div class="text-muted" style="font-size: 0.7rem;">Maintenance</div>
+                        {% endif %}
+                        
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+                <div class="col-12 text-center py-5 text-muted">
+                    <div class="bg-white p-4 rounded-4 shadow-sm d-inline-block">
+                        <i class="bi bi-pc-display fs-1 d-block mb-3 text-secondary"></i>
+                        <h5 class="fw-bold">ยังไม่มีข้อมูลเครื่องคอมพิวเตอร์</h5>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
     </div>
 </div>
+
+<div class="modal fade" id="checkInModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-0 bg-primary text-white modal-header-hero">
+                <div class="position-relative z-1">
+                    <h5 class="modal-title fw-bold opacity-75 text-uppercase ls-1" style="font-size: 0.8rem;">Admin Check-in</h5>
+                    <h2 class="fw-bold mb-0 mt-1" id="modalPcName">PC-XX</h2>
+                </div>
+                <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3 z-2" data-bs-dismiss="modal"></button>
+                <i class="bi bi-display modal-bg-deco"></i>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <form id="adminCheckinForm" method="post" action="{% url 'admin_manage_pc' %}"> 
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="start_session">
+                    <input type="hidden" name="pc_id" id="checkInPcId">
+                    <input type="hidden" name="user_type" value="internal">
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary small text-uppercase">ระบุรหัสนักศึกษา / User ID</label>
+                        <div class="input-group input-group-lg shadow-sm rounded-pill overflow-hidden bg-white border">
+                            <span class="input-group-text bg-white border-0 ps-3 text-primary"><i class="bi bi-person-badge fs-4"></i></span>
+                            <input type="text" name="user_id" class="form-control border-0 ps-2" id="ubuUser" placeholder="เช่น 66123456" required autocomplete="off">
+                            <button class="btn btn-primary px-4 fw-bold" type="button" onclick="verifyUBUUser()">
+                                <i class="bi bi-search me-1"></i> ตรวจสอบ
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="internalVerifyCard" class="card border-0 shadow-sm rounded-4 mb-4 d-none animate-fade" style="background: linear-gradient(135deg, #ffffff 0%, #f3f9ff 100%);">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="avatar-circle-lg bg-success-subtle text-success">
+                                        <i class="bi bi-person-check-fill"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-0 fw-bold text-dark" id="showName">-</h6>
+                                    <small class="text-secondary" id="showFaculty">-</small>
+                                </div>
+                                <div class="ms-auto text-success">
+                                    <i class="bi bi-check-circle-fill fs-3"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="user_name" id="hiddenUserName">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm" id="btnConfirm" disabled>
+                        <i class="bi bi-power me-2"></i>ยืนยันเปิดเครื่อง (Start Session)
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="manageActiveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header border-0 bg-warning bg-gradient text-dark p-4 position-relative">
+                <div class="position-relative z-1 text-center w-100">
+                    <div class="bg-white rounded-circle d-inline-flex p-3 shadow-sm mb-3">
+                        <i class="bi bi-exclamation-triangle-fill text-warning fs-1"></i>
+                    </div>
+                    <h4 class="modal-title fw-bold">จัดการเครื่อง (Active)</h4>
+                    <p class="mb-0 opacity-75 small">เครื่องนี้กำลังถูกใช้งานอยู่</p>
+                </div>
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <h2 class="fw-bold text-primary mb-1" id="managePcName">-</h2>
+                <div class="badge bg-light text-muted border px-3 py-2 rounded-pill mb-4">
+                    <i class="bi bi-clock-history me-1"></i> กำลังใช้งาน
+                </div>
+
+                <div class="card border-0 bg-light rounded-4 mb-4 p-3 text-start">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white p-2 rounded-circle shadow-sm me-3 text-center" style="width: 50px; height: 50px; min-width: 50px;">
+                            <i class="bi bi-person-fill fs-3 text-secondary mt-1"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Current User</small>
+                            <h5 class="fw-bold text-dark text-truncate mb-0" id="manageUserName">-</h5>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" action="{% url 'admin_manage_pc' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="force_stop">
+                    <input type="hidden" name="pc_id" id="managePcId">
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-danger btn-lg rounded-pill py-3 fw-bold shadow-sm" onclick="return confirm('⚠️ คำเตือน: การกระทำนี้จะตัดการใช้งานทันที\nยืนยันที่จะบังคับหยุดการใช้งาน?')">
+                            <i class="bi bi-power me-2"></i>สั่ง Force Logout
+                        </button>
+                        <button type="button" class="btn btn-link text-muted mt-2 text-decoration-none" data-bs-dismiss="modal">ยกเลิก</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'cklab/js/admin-monitor.js' %}"></script>
 {% endblock %}
