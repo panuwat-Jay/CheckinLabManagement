@@ -281,3 +281,43 @@
 .ls-1 {
     letter-spacing: 1px;
 }
+
+/* =========================================
+   4. MANAGE PC / SOFTWARE CARDS
+   ========================================= */
+
+/* CSS สำหรับ Software Cards ใน Modal (หน้า Manage PC) */
+.soft-card {
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    border: 2px solid #f8f9fa;
+    background-color: #ffffff;
+}
+.soft-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    border-color: #dee2e6;
+}
+.soft-card.active {
+    border-color: #0d6efd !important;
+    background-color: #f0f8ff !important;
+}
+.soft-card.active .text-muted {
+    color: #0d6efd !important;
+}
+
+/* CSS สำหรับสถานะ Locked (คลิกไม่ได้) */
+.soft-card.locked {
+    background-color: #f8f9fa;
+    opacity: 0.5;
+    pointer-events: none;
+    border-color: #e9ecef;
+}
+.soft-card.locked .text-muted {
+    color: #adb5bd !important;
+}
+
+/* ซ่อน input checkbox ตัวจริงไว้ (ใช้ Card เป็น UI แทน) */
+.hidden-checkbox { 
+    display: none; 
+}
