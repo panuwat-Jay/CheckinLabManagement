@@ -7,12 +7,19 @@ from ..models import Computer
 
 class AdminMonitorView(LoginRequiredMixin, View):
     def get(self, request):
+
+        
         pass
 
     def post(self, request):
         pass
 
 
-class ApiMonitorDataView(View):
-    def get(self, request):
+class AdminCheckinView(LoginRequiredMixin, View):
+    def post(self, request, pc_id):
+        pass
+
+
+class AdminCheckoutView(LoginRequiredMixin, View):
+    def post(self, request, pc_id):
         pass

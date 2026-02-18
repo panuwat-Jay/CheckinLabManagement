@@ -2,8 +2,8 @@ from django.db import models
 
 # ภานุวัฒน์ - สร้าง Model สำหรับการตั้งค่าระบบ (Config) เพื่อเก็บข้อมูลการตั้งค่าต่าง ๆ ของระบบ
 class SiteConfig(models.Model):
-    pass
-
+    lab_name = models.CharField(max_length=255)
+    
 # ลลิดา - สร้าง Model สำหรับ Software เพื่อเก็บข้อมูลซอฟต์แวร์ที่ติดตั้งในห้องปฏิบัติการ
 class Software(models.Model):
     pass

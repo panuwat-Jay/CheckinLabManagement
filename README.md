@@ -24,12 +24,12 @@
 | :--- | :--- | :--- | :--- | :--- |
 | **1. ปภังกร** | **User / Kiosk System** | `path('', ...)`<br>`path('confirm/', ...)`<br>`path('timer/', ...)`<br>`path('feedback/', ...)` | `IndexView`<br>`ConfirmView`<br>`TimerView`<br>`FeedbackView` | — |
 | **2. สถาพร** | **Admin Auth** | `path('admin-portal/login/', ...)`<br>`path('admin-portal/logout/', ...)` | Django built-in `LoginView` / `LogoutView` | — |
+| **8. ภานุวัฒน์** | **Config + User Mgmt** | `path('admin-portal/config/', ...)`<br>`path('admin-portal/users/', ...)`<br>`path('admin-portal/users/<pk>/edit/', ...)`<br>`path('admin-portal/users/<pk>/delete/', ...)` | `AdminConfigView`<br>`AdminUserView`<br>`AdminUserEditView`<br>`AdminUserDeleteView` | `SiteConfig` |
 | **3. ธนสิทธิ์** | **Admin Monitor** | `path('admin-portal/monitor/', ...)`<br>`path('api/monitor-data/', ...)` (API) | `AdminMonitorView`<br>`ApiMonitorDataView` | `Computer` |
 | **4. อัษฎาวุธ** | **Booking** | `path('admin-portal/booking/', ...)` | `AdminBookingView`<br>`AdminImportBookingView` | `Booking` |
 | **5. ณัฐกรณ์** | **PC Manage** | `path('admin-portal/manage-pc/', ...)` | `AdminManagePcView` | `Status` |
 | **6. ลลิดา** | **Software** | `path('admin-portal/software/', ...)` | `AdminSoftwareView` | `Software` |
 | **7. เขมมิกา** | **Report** | `path('admin-portal/report/', ...)`<br>`path('admin-portal/report/export/', ...)` (Export CSV) | `AdminReportView`<br>`AdminReportExportView` | `UsageLog` |
-| **8. ภานุวัฒน์** | **Config** | `path('admin-portal/config/', ...)` | `AdminConfigView` (GET + POST) | `SiteConfig` |
 
 ---
 

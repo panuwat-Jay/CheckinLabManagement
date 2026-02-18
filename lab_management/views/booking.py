@@ -12,6 +12,14 @@ class AdminBookingView(LoginRequiredMixin, View):
         pass
 
 
+class AdminBookingDetailView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        pass
+
+    def post(self, request, pk):
+        pass
+
+
 class AdminImportBookingView(LoginRequiredMixin, View):
     def post(self, request):
         pass

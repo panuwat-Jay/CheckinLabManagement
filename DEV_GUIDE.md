@@ -22,9 +22,9 @@ CheckinLabManagement/
 │   │   ├── monitor.py            # ธนสิทธิ์: AdminMonitorView, ApiMonitorDataView
 │   │   ├── booking.py            # อัษฎาวุธ: AdminBookingView, AdminImportBookingView
 │   │   ├── manage_pc.py          # ณัฐกรณ์: AdminManagePcView
-│   │   ├── software.py           # ลลิดา: AdminSoftwareView
+│   │   ├── software.py           # ลลิดา: AdminSoftwareView, AdminSoftwareEditView, AdminSoftwareDeleteView
 │   │   ├── report.py             # เขมมิกา: AdminReportView, AdminReportExportView
-│   │   └── config.py             # ภานุวัฒน์: AdminConfigView
+│   │   └── config.py             # ภานุวัฒน์: AdminConfigView, AdminUserView, AdminUserEditView, AdminUserDeleteView
 │   ├── urls.py                   # URL patterns ทั้งหมด
 │   ├── admin.py                  # Django admin registration
 │   ├── apps.py
@@ -206,6 +206,9 @@ python manage.py runserver
 
 | Class | Base | HTTP Methods | หน้าที่ | ผู้รับผิดชอบ |
 |:---|:---|:---|:---|:---|
+| `AdminUserView` | `LoginRequiredMixin, View` | GET, POST | จัดการ Admin User (ดูรายการ / เพิ่ม) | สถาพร |
+| `AdminUserEditView` | `LoginRequiredMixin, View` | GET, POST | แก้ไข Admin User | สถาพร |
+| `AdminUserDeleteView` | `LoginRequiredMixin, View` | POST | ลบ Admin User | สถาพร |
 | `AdminMonitorView` | `LoginRequiredMixin, View` | GET, POST | Dashboard แสดง Computer ทั้งหมด | ธนสิทธิ์ |
 | `AdminBookingView` | `LoginRequiredMixin, View` | GET, POST | จัดการการจอง | อัษฎาวุธ |
 | `AdminImportBookingView` | `LoginRequiredMixin, View` | POST | Import ข้อมูล Booking | อัษฎาวุธ |
@@ -235,6 +238,10 @@ Root: `cklab_project/urls.py` → `include('lab_management.urls')`
 
 /admin-portal/login/           → Django LoginView
 /admin-portal/logout/          → Django LogoutView
+
+/admin-portal/users/                    → AdminUserView
+/admin-portal/users/<pk>/edit/          → AdminUserEditView
+/admin-portal/users/<pk>/delete/        → AdminUserDeleteView
 
 /admin-portal/monitor/         → AdminMonitorView
 /admin-portal/booking/         → AdminBookingView

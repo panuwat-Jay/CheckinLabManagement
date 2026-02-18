@@ -10,3 +10,16 @@ class AdminSoftwareView(LoginRequiredMixin, View):
 
     def post(self, request):
         pass
+
+
+class AdminSoftwareEditView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        pass
+
+    def post(self, request, pk):
+        pass
+
+
+class AdminSoftwareDeleteView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        pass

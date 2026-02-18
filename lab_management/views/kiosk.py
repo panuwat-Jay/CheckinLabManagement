@@ -1,6 +1,5 @@
 # ปภังกร — User / Kiosk Side
 from django.views import View
-from django.views.generic import TemplateView
 
 
 class IndexView(View):
@@ -11,18 +10,30 @@ class IndexView(View):
         pass
 
 
-class ConfirmView(TemplateView):
-    template_name = 'cklab/kiosk/confirm.html'
+class StatusView(View):
+    def get(self, request, pc_id):
+        pass
 
 
-class TimerView(View):
-    def get(self, request):
+class CheckinView(View):
+    def get(self, request, pc_id):
+        pass
+
+    def post(self, request, pc_id):
+        pass
+
+
+class CheckoutView(View):
+    def get(self, request, pc_id):
+        pass
+
+    def post(self, request, pc_id):
         pass
 
 
 class FeedbackView(View):
-    def get(self, request):
+    def get(self, request, pc_id, software_id):
         pass
 
-    def post(self, request):
+    def post(self, request, pc_id, software_id):
         pass
