@@ -20,4 +20,31 @@ class Computer(models.Model):
 
 # เขมมิกา - สร้าง Model สำหรับบันทึกการใช้งานคอมพิวเตอร์ (UsageLog)
 class UsageLog(models.Model):
-    pass
+    # 1. ข้อมูลระบุตัวตนและประเภทผู้ใช้
+    user_id = models.CharField(max_length=50)        # รหัสนักศึกษา/บุคลากร
+    user_name = models.CharField(max_length=100)      # ชื่อ-นามสกุล
+    user_type = models.CharField(max_length=20, choices=[('student', 'Student'), ('staff', 'Staff')], null=True) # สถานะผู้ใช้ (Student/Staff)
+    department = models.CharField(max_length=100, null=True, blank=True) # คณะ/หน่วยงาน
+    user_year = models.CharField(max_length=10, null=True, blank=True)   # ชั้นปี
+
+    # 2. ข้อมูลอุปกรณ์และซอฟต์แวร์
+    # เชื่อมโยงกับ Computer เพื่อเก็บหมายเลขเครื่อง (pc_id/name)
+    computer = models.ForeignKey('Computer', on_delete=models.SET_NULL, null=True) 
+    software_used = models.CharField(max_length=100, null=True, blank=True)       # Software ที่ใช้งาน
+
+    # 3. วันที่และเวลา (รวมอยู่ในฟิลด์เดียวเพื่อความแม่นยำ)
+    # เก็บทั้งวันที่และเวลาเริ่ม
+    start_time = models.DateTimeField()               
+    # เก็บทั้งวันที่และเวลาสิ้นสุด (บันทึกอัตโนมัติเมื่อ Checkout)
+    end_time = models.DateTimeField(auto_now_add=True)
+
+    # 4. การประเมินผลและข้อเสนอแนะ
+    satisfaction_score = models.IntegerField(null=True, blank=True) # คะแนนความพึงพอใจ 1-5
+    comment = models.TextField(null=True, blank=True)               # ข้อเสนอแนะเพิ่มเติม
+
+    class Meta:
+        ordering = ['-end_time'] # เรียงจากใหม่ไปเก่าสำหรับหน้า Report
+
+    def __str__(self):
+        # แสดงชื่อผู้ใช้ คู่กับหมายเลขเครื่อง PC
+        return f"{self.user_name} - {self.computer.name if self.computer else 'Unknown PC'}"
