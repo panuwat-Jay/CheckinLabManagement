@@ -1,27 +1,7 @@
 from django.db import models
 
 # ภานุวัฒน์ - สร้าง Model สำหรับการตั้งค่าระบบ (Config) เพื่อเก็บข้อมูลการตั้งค่าต่าง ๆ ของระบบ
-class SiteConfig(models.Model):
 
-    lab_name = models.CharField(max_length=255, default="CKLab", help_text="ชื่อห้องปฏิบัติการที่จะแสดงบนเว็บไซต์")
-    booking_enabled = models.BooleanField(default=True, help_text="เปิด/ปิด การใช้งานระบบจอง")
-    announcement = models.TextField(blank=True, null=True, help_text="ข้อความประกาศ (แสดงบนหน้า Kiosk)")
-    location = models.CharField(max_length=255, blank=True, null=True, help_text="สถานที่ตั้ง (เช่น อาคาร 4 ชั้น 2)")
-    contact_email = models.EmailField(blank=True, null=True, help_text="อีเมลติดต่อ (เช่น admin@example.com)")
-    admin_on_duty = models.CharField(max_length=100, blank=True, null=True, help_text="เจ้าหน้าที่ดูแลระบบประจำวัน")
-    contact_phone = models.CharField(max_length=50, blank=True, null=True, help_text="เบอร์โทรศัพท์ติดต่อ")
-    is_open = models.BooleanField(default=True, help_text="สถานะการให้บริการห้องแล็บ (เปิด/ปิด)")
-class Meta:
-        verbose_name = "การตั้งค่าระบบ (Site Config)"
-        verbose_name_plural = "การตั้งค่าระบบ (Site Config)"
-
-def save(self, *args, **kwargs):
-        # บังคับให้มี record เดียวเสมอ (Singleton)
-        self.pk = 1 
-        super(SiteConfig, self).save(*args, **kwargs)
-
-def __str__(self):
-        return self.lab_name
 # ลลิดา - สร้าง Model สำหรับ Software เพื่อเก็บข้อมูลซอฟต์แวร์ที่ติดตั้งในห้องปฏิบัติการ
 class Software(models.Model):
     pass
